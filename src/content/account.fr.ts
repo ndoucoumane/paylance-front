@@ -1,0 +1,288 @@
+/**
+ * Textes du parcours de compte (inscription, onboarding, espace professionnel), en français.
+ * Séparés de fr.ts (site public) pour garder chaque fichier lisible.
+ */
+export const account = {
+  meta: {
+    login: 'Connexion · Paylance',
+    register: 'Créer un compte · Paylance',
+    verifyEmail: 'Vérification de l’e-mail · Paylance',
+    company: 'Votre entreprise · Paylance',
+    preferences: 'Préférences · Paylance',
+    plan: 'Formule · Paylance',
+    providers: 'Prestataires · Paylance',
+    dashboard: 'Tableau de bord · Paylance',
+    dashboardProviders: 'Comptes prestataires · Paylance',
+  },
+
+  common: {
+    continue: 'Continuer',
+    back: 'Retour',
+    save: 'Enregistrer',
+    retry: 'Réessayer',
+    backHome: 'Retour au site',
+    logout: 'Se déconnecter',
+    quit: 'Enregistrer et quitter',
+    loading: 'Chargement…',
+    checkingSession: 'Vérification de votre session…',
+    errorTitle: 'Une erreur est survenue',
+    unavailableTitle: 'Fonctionnalité pas encore disponible',
+    unavailableText:
+      'Le serveur Paylance n’expose pas encore cette étape du parcours. Activez le mode démonstration (VITE_DEMO_MODE=true) pour parcourir l’inscription avec des données fictives.',
+  },
+
+  demo: {
+    label: 'Mode démonstration',
+    text: 'Données fictives, enregistrées uniquement dans ce navigateur. Aucun e-mail n’est envoyé.',
+    reset: 'Réinitialiser',
+    resetConfirm: 'Effacer toutes les données de démonstration de ce navigateur ?',
+    accountTitle: 'Compte de démonstration',
+    accountText: 'Compte déjà configuré, avec un compte Wave de test connecté.',
+    useAccount: 'Remplir avec ce compte',
+    codeTitle: 'Code de démonstration',
+    codeText: 'Aucun e-mail n’est envoyé en mode démonstration. Utilisez ce code :',
+    providersText:
+      'Mode démonstration : un compte en environnement TEST passe le test de connexion. Un compte LIVE est refusé, car aucune vérification réelle n’est possible ici.',
+  },
+
+  aside: {
+    eyebrow: 'Orchestration de paiements',
+    title: 'Tous vos paiements mobiles.',
+    titleMuted: 'Une seule plateforme.',
+    stepsTitle: 'Votre mise en route',
+    steps: [
+      'Créez votre compte',
+      'Présentez votre entreprise',
+      'Choisissez votre formule',
+      'Connectez vos prestataires, maintenant ou plus tard',
+    ],
+    note: 'Vos fonds restent sur vos comptes marchands. Paylance ne les détient jamais.',
+  },
+
+  login: {
+    title: 'Connexion',
+    subtitle: 'Accédez à votre espace Paylance.',
+    email: 'Adresse e-mail professionnelle',
+    password: 'Mot de passe',
+    forgot: 'Mot de passe oublié ?',
+    submit: 'Se connecter',
+    submitRedirect: 'Continuer',
+    redirectHint: 'Vous allez être redirigé vers notre page de connexion sécurisée.',
+    noAccount: 'Pas encore de compte ?',
+    register: 'Créer un compte',
+    errorTitle: 'Connexion impossible',
+    invalidCredentials: 'E-mail ou mot de passe incorrect.',
+  },
+
+  register: {
+    title: 'Créez votre compte',
+    subtitle: 'Quelques minutes suffisent. Aucune carte bancaire n’est demandée.',
+    firstName: 'Prénom',
+    lastName: 'Nom',
+    email: 'Adresse e-mail professionnelle',
+    emailHint: 'Nous vous enverrons un code pour la vérifier.',
+    password: 'Mot de passe',
+    passwordRulesLabel: 'Votre mot de passe doit contenir :',
+    confirmPassword: 'Confirmez le mot de passe',
+    terms: 'J’accepte les conditions d’utilisation et la politique de confidentialité de Paylance.',
+    submit: 'Créer mon compte',
+    hasAccount: 'Déjà un compte ?',
+    login: 'Se connecter',
+    errorTitle: 'Création du compte impossible',
+  },
+
+  verify: {
+    title: 'Vérifiez votre adresse e-mail',
+    subtitle: (email: string) => `Saisissez le code à 6 chiffres envoyé à ${email}.`,
+    submit: 'Vérifier',
+    expiresIn: (time: string) => `Le code expire dans ${time}.`,
+    expired: 'Ce code a expiré. Demandez-en un nouveau.',
+    attemptsLeft: (count: number) =>
+      `${count} tentative${count > 1 ? 's' : ''} restante${count > 1 ? 's' : ''}.`,
+    noAttempts: 'Plus aucune tentative pour ce code. Demandez-en un nouveau.',
+    notReceived: 'Vous n’avez rien reçu ? Vérifiez vos courriers indésirables, ou',
+    resend: 'renvoyer le code',
+    resendIn: (seconds: number) => `renvoyer le code dans ${seconds} s`,
+    resent: 'Un nouveau code vient d’être envoyé.',
+    wrongEmail: 'Ce n’est pas la bonne adresse ?',
+    restart: 'Recommencer l’inscription',
+  },
+
+  stepper: {
+    label: 'Étapes de l’inscription',
+    progress: (current: number, total: number) => `Étape ${current} sur ${total}`,
+    optional: 'Facultatif',
+    steps: {
+      ACCOUNT: 'Compte',
+      EMAIL: 'Adresse e-mail',
+      COMPANY: 'Entreprise',
+      PREFERENCES: 'Préférences',
+      PLAN: 'Formule',
+      PROVIDERS: 'Prestataires',
+    },
+    saved:
+      'Votre progression est enregistrée à chaque étape : vous pouvez quitter et reprendre plus tard.',
+  },
+
+  company: {
+    title: 'Présentez votre entreprise',
+    subtitle: 'Ces informations créent votre espace Paylance. Vous en serez le propriétaire.',
+    tradeName: 'Nom commercial',
+    tradeNameHint: 'Le nom connu de vos clients.',
+    legalName: 'Raison sociale',
+    legalNameHint: 'Le nom officiel, tel qu’il figure sur vos documents légaux.',
+    country: 'Pays',
+    sector: 'Secteur d’activité',
+    phone: 'Téléphone professionnel',
+    website: 'Site web',
+    size: 'Taille de l’entreprise',
+    choose: 'Choisir…',
+    submitCreate: 'Créer mon entreprise',
+    submitUpdate: 'Enregistrer et continuer',
+    errorTitle: 'Enregistrement impossible',
+  },
+
+  preferences: {
+    title: 'Vos préférences',
+    subtitle: 'Pré-remplies selon votre pays. Vous pourrez les modifier à tout moment.',
+    regionalTitle: 'Région et affichage',
+    currency: 'Devise principale',
+    currencyHint: 'Utilisée pour vos rapports et vos tableaux de bord.',
+    timezone: 'Fuseau horaire',
+    language: 'Langue',
+    notificationsTitle: 'Notifications par e-mail',
+    notifications: {
+      paymentSucceeded: {
+        label: 'Paiements réussis',
+        description: 'Un récapitulatif à chaque paiement encaissé.',
+      },
+      paymentFailed: {
+        label: 'Paiements échoués',
+        description: 'Pour réagir rapidement auprès de vos clients.',
+      },
+      refunds: {
+        label: 'Remboursements',
+        description: 'Création et résultat de chaque remboursement.',
+      },
+      providerIssues: {
+        label: 'Incidents prestataires',
+        description: 'Identifiants expirés ou connexion interrompue.',
+      },
+      weeklySummary: {
+        label: 'Synthèse hebdomadaire',
+        description: 'Vos encaissements de la semaine, chaque lundi.',
+      },
+    },
+    submit: 'Enregistrer et continuer',
+    errorTitle: 'Enregistrement impossible',
+  },
+
+  plan: {
+    title: 'Choisissez votre formule',
+    subtitle: 'Commencez gratuitement avec Starter. Vous pourrez changer de formule plus tard.',
+    recommended: 'Recommandée',
+    current: 'Formule actuelle',
+    choose: 'Continuer avec Starter',
+    chooseNamed: (name: string) => `Continuer avec ${name}`,
+    contact: 'Parler à notre équipe',
+    noPayment: 'Aucun paiement n’est demandé pour terminer l’inscription.',
+    errorTitle: 'Choix de la formule impossible',
+  },
+
+  providers: {
+    title: 'Connectez vos prestataires',
+    subtitle:
+      'Facultatif : vous pouvez connecter vos comptes maintenant ou plus tard, depuis votre tableau de bord.',
+    dashboardTitle: 'Comptes prestataires',
+    dashboardSubtitle: 'Connectez et gérez les comptes marchands que Paylance supervise.',
+    skip: 'Passer cette étape',
+    finish: 'Terminer et accéder au tableau de bord',
+    otherTitle: 'Autres prestataires',
+    otherText:
+      'D’autres prestataires et d’autres pays sont prévus. Dites-nous lesquels vous utilisez : nous les ajouterons en priorité.',
+    otherCta: 'Proposer un prestataire',
+    modesTitle: 'Mode de connexion',
+    directMode: 'Autorisation directe',
+    apiMode: 'Configuration API assistée',
+    apiModeText: 'Vous saisissez vos clés API ; Paylance les chiffre et vérifie la connexion.',
+    noAccounts: 'Aucun compte connecté.',
+    addAccount: 'Ajouter un compte',
+    addAnotherAccount: 'Ajouter un autre compte',
+    accountsCount: (count: number) => `${count} compte${count > 1 ? 's' : ''}`,
+    form: {
+      title: (provider: string) => `Nouveau compte ${provider}`,
+      guideTitle: 'Comment faire',
+      label: 'Nom du compte',
+      labelHint: 'Pour le reconnaître, ex. « Boutique Dakar » ou « Site e-commerce ».',
+      environment: 'Environnement',
+      environments: {
+        TEST: { label: 'Test', description: 'Clés de test, aucun argent réel.' },
+        LIVE: { label: 'Production', description: 'Clés réelles de votre compte marchand.' },
+      },
+      credentialsTitle: 'Identifiants API',
+      encrypted: 'Chiffrés avant enregistrement, jamais réaffichés en clair.',
+      cancel: 'Annuler',
+      submit: 'Enregistrer et tester la connexion',
+      required: 'Ce champ est obligatoire.',
+      labelRequired: 'Donnez un nom à ce compte.',
+      errorTitle: 'Enregistrement impossible',
+    },
+    status: {
+      PENDING_VERIFICATION: 'À vérifier',
+      ACTIVE: 'Connecté',
+      DISABLED: 'Désactivé',
+    },
+    environmentBadge: { TEST: 'Test', LIVE: 'Production' },
+    testing: 'Test de la connexion…',
+    test: 'Tester la connexion',
+    retest: 'Tester à nouveau',
+    disable: 'Retirer',
+    disableConfirm: (label: string) =>
+      `Retirer le compte « ${label} » ? Paylance ne l’utilisera plus.`,
+    webhookTitle: 'URL de notification à déclarer chez le prestataire',
+    copy: 'Copier',
+    copied: 'Copiée',
+    lastCheck: 'Dernière vérification',
+    errorTitle: 'Action impossible',
+  },
+
+  app: {
+    nav: { overview: 'Vue d’ensemble', providers: 'Comptes prestataires' },
+    hello: (name: string) => `Bonjour ${name}`,
+    org: (role: string) => `Vous êtes ${role.toLowerCase()} de cet espace.`,
+    roles: {
+      OWNER: 'Propriétaire',
+      ADMIN: 'Administrateur',
+      DEVELOPER: 'Développeur',
+      VIEWER: 'Lecteur',
+    },
+    empty: {
+      title: 'Connectez votre premier compte marchand',
+      text: 'Paylance affichera ici vos encaissements, vos remboursements et votre rapprochement dès qu’un compte Wave Business ou Orange Money sera connecté.',
+      cta: 'Connecter un compte',
+      points: [
+        'Vos fonds restent sur vos comptes marchands',
+        'Identifiants chiffrés, jamais réaffichés',
+        'Plusieurs comptes par prestataire',
+      ],
+    },
+    connectedTitle: 'Comptes connectés',
+    manage: 'Gérer',
+    transactionsTitle: 'Transactions',
+    transactionsEmpty: 'Aucune transaction pour le moment.',
+    transactionsEmptyText:
+      'Les paiements apparaîtront ici dès qu’ils seront créés avec Paylance, par lien de paiement ou par l’API.',
+    setupTitle: 'Mise en route',
+    setup: {
+      account: 'Compte créé',
+      email: 'Adresse e-mail vérifiée',
+      company: 'Entreprise créée',
+      preferences: 'Préférences enregistrées',
+      plan: 'Formule choisie',
+      provider: 'Premier compte prestataire connecté',
+    },
+    setupDone: (done: number, total: number) => `${done} sur ${total} terminées`,
+  },
+};
+
+export type AccountContent = typeof account;

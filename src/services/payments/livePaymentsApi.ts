@@ -1,0 +1,98 @@
+import { currentOrganizationId, token } from '../account/liveAccountApi';
+import { apiRequest } from '../api/http';
+import { periodStart } from './rules';
+import type {
+  Payment,
+  PaymentOverview,
+  PaymentPage,
+  PaymentQuery,
+  PaymentsApi,
+  PaymentStats,
+  PaymentStatusChange,
+  Refund,
+} from './types';
+
+/** API réelle : DashboardPaymentController (GET /payments, /payments/stats, historique, remboursements). */
+
+const DAY = 86_400_000;
+
+/** Page Spring : sérialisation historique ou `VIA_DTO` (objet `page`). */
+type SpringPage<T> = {
+  content: T[];
+  totalElements?: number;
+  number?: number;
+  size?: number;
+  page?: { totalElements: number; number: number; size: number };
+};
+
+/** LocalDateTime attendu par @DateTimeFormat(ISO.DATE_TIME), sans fuseau. */
+function isoLocal(time: number): string {
+  return new Date(time).toISOString().slice(0, 19);
+}
+
+async function auth() {
+  return { token: await token(), organizationId: await currentOrganizationId() };
+}
+
+async function fetchStats(from: number, to: number): Promise<PaymentStats> {
+  const params = new URLSearchParams({ from: isoLocal(from), to: isoLocal(to) });
+  return apiRequest<PaymentStats>(`/api/v1/dashboard/payments/stats?${params}`, await auth());
+}
+
+const path = (paymentId: string) => `/api/v1/dashboard/payments/${encodeURIComponent(paymentId)}`;
+
+export const livePaymentsApi: PaymentsApi = {
+  async overview(periodDays): Promise<PaymentOverview> {
+    const now = Date.now();
+    const span = periodDays * DAY;
+    const start = periodStart(periodDays, now);
+    const [current, previous] = await Promise.all([
+      fetchStats(start, now),
+      fetchStats(start - span, start),
+    ]);
+    // Le backend ne fournit pas encore de série quotidienne : pas de courbe plutôt qu'une courbe inventée.
+    return { current, previous, dailyVolume: null, dailyCount: null };
+  },
+
+  async list(query: PaymentQuery): Promise<PaymentPage> {
+    const params = new URLSearchParams({
+      page: String(query.page),
+      size: String(query.size),
+      sort: 'createdAt,desc',
+      from: isoLocal(periodStart(query.periodDays)),
+    });
+    if (query.status) params.set('status', query.status);
+    if (query.provider) params.set('provider', query.provider);
+    if (query.q?.trim()) params.set('q', query.q.trim());
+    const page = await apiRequest<SpringPage<Payment>>(
+      `/api/v1/dashboard/payments?${params}`,
+      await auth(),
+    );
+    return {
+      items: page.content,
+      total: page.page?.totalElements ?? page.totalElements ?? page.content.length,
+      page: page.page?.number ?? page.number ?? query.page,
+      size: page.page?.size ?? page.size ?? query.size,
+    };
+  },
+
+  async get(paymentId) {
+    return apiRequest<Payment>(path(paymentId), await auth());
+  },
+
+  async history(paymentId) {
+    return apiRequest<PaymentStatusChange[]>(`${path(paymentId)}/history`, await auth());
+  },
+
+  async refunds(paymentId) {
+    return apiRequest<Refund[]>(`${path(paymentId)}/refunds`, await auth());
+  },
+
+  async refund(paymentId, request) {
+    return apiRequest<Refund>(`${path(paymentId)}/refunds`, {
+      method: 'POST',
+      body: request,
+      ...(await auth()),
+    });
+  },
+};
