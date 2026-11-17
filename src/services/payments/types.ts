@@ -81,6 +81,46 @@ export type PaymentStats = {
   byProvider: AggregateEntry[];
 };
 
+/**
+ * Création d'un paiement depuis le tableau de bord (contrat attendu, pas encore exposé
+ * par DashboardPaymentController). Le client reçoit la demande sur son téléphone.
+ */
+export type PaymentCreateRequest = {
+  providerAccountId: string;
+  /** En centimes. */
+  amount: number;
+  /** Format international, ex. +221771234567. */
+  payerPhone: string;
+  externalReference?: string;
+  description?: string;
+  /** Durée de validité de la demande. */
+  expiresInMinutes: number;
+};
+
+export type ScheduledRefundStatus = 'SCHEDULED' | 'EXECUTED' | 'CANCELLED' | 'FAILED';
+
+/** Remboursement exécuté automatiquement à une date choisie (contrat attendu). */
+export type ScheduledRefund = {
+  id: string;
+  paymentId: string;
+  paymentNumber: string;
+  provider: Payment['provider'];
+  payerPhone: string | null;
+  /** En centimes ; `null` = solde remboursable au moment de l'exécution. */
+  amount: number | null;
+  currency: string;
+  reason: string;
+  scheduledAt: string;
+  status: ScheduledRefundStatus;
+  refundId: string | null;
+  failureReason: string | null;
+  createdBy: string | null;
+  createdAt: string;
+};
+
+/** `amount` absent = remboursement total. */
+export type ScheduledRefundRequest = RefundRequest & { scheduledAt: string };
+
 /* ---------- Côté écran ---------- */
 
 export type PeriodDays = 7 | 30 | 90;
@@ -119,4 +159,8 @@ export interface PaymentsApi {
   history(paymentId: string): Promise<PaymentStatusChange[]>;
   refunds(paymentId: string): Promise<Refund[]>;
   refund(paymentId: string, request: RefundRequest): Promise<Refund>;
+  create(request: PaymentCreateRequest): Promise<Payment>;
+  scheduledRefunds(): Promise<ScheduledRefund[]>;
+  scheduleRefund(paymentId: string, request: ScheduledRefundRequest): Promise<ScheduledRefund>;
+  cancelScheduledRefund(id: string): Promise<ScheduledRefund>;
 }

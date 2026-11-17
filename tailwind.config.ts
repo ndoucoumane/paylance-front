@@ -49,6 +49,8 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
         display: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
+        // Numéros de transaction, références : chiffres bien distincts (0/O, 1/l).
+        mono: ['"JetBrains Mono"', ...defaultTheme.fontFamily.mono],
       },
       maxWidth: {
         content: '72rem',

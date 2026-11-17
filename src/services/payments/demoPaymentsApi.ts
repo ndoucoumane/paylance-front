@@ -13,6 +13,8 @@ import type {
   PaymentStatus,
   PaymentStatusChange,
   Refund,
+  RefundRequest,
+  ScheduledRefund,
 } from './types';
 
 /**
@@ -27,6 +29,10 @@ export type DemoPaymentsState = {
   anchor: number;
   /** Remboursements effectués dans l'interface, par paiement. */
   refunds: Record<string, Refund[]>;
+  /** Paiements créés depuis l'interface. */
+  created?: Payment[];
+  /** Remboursements programmés (exécutés à la lecture suivante leur échéance passée). */
+  scheduled?: ScheduledRefund[];
 };
 
 const DAY = 86_400_000;
@@ -198,15 +204,105 @@ function withRefunds(item: Generated, state: DemoPaymentsState): Payment {
   };
 }
 
+/** Un paiement créé dans l'interface est confirmé par le « client » une minute plus tard. */
+const SETTLE_MS = 60_000;
+
+function settle(payment: Payment, now: number): Payment {
+  const created = Date.parse(payment.createdAt);
+  if (payment.status !== 'PENDING' || now - created < SETTLE_MS) return payment;
+  const paidAt = new Date(created + SETTLE_MS).toISOString();
+  return { ...payment, status: 'SUCCESS', paidAt, updatedAt: paidAt };
+}
+
+function remainingOf(item: Generated, state: DemoPaymentsState): number {
+  const refunded = refundsOf(item, state)
+    .filter((refund) => refund.status === 'SUCCESS')
+    .reduce((total, refund) => total + refund.amount, 0);
+  return item.payment.amount - refunded;
+}
+
+/** Règles du RefundService : statut remboursable, Wave en totalité, solde suffisant. */
+function applyRefund(
+  item: Generated,
+  state: DemoPaymentsState,
+  request: RefundRequest,
+  requestedBy: string,
+  at = new Date(),
+): Refund {
+  const payment = withRefunds(item, state);
+  if (!isRefundable(payment)) {
+    throw new ApiError(
+      'http',
+      `Impossible de rembourser un paiement au statut ${payment.status}.`,
+      { status: 409 },
+    );
+  }
+  const remaining = remainingOf(item, state);
+  const amount = request.amount ?? remaining;
+  if (request.amount !== undefined && !supportsPartialRefund(payment) && amount < remaining) {
+    throw new ApiError('http', 'Wave ne permet que le remboursement total d’un paiement.', {
+      status: 422,
+    });
+  }
+  if (amount <= 0 || amount > remaining) {
+    throw new ApiError('http', 'Le montant dépasse le solde remboursable.', { status: 422 });
+  }
+  const refund: Refund = {
+    refundId: `ref_${at.getTime().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`,
+    paymentId: payment.paymentId,
+    paymentNumber: payment.paymentNumber,
+    payerPhone: payment.payerPhone,
+    amount,
+    status: 'SUCCESS',
+    reason: request.reason.trim(),
+    failureReason: null,
+    providerRefundId: `demo_${at.getTime().toString(36)}`,
+    requestedBy,
+    createdAt: at.toISOString(),
+  };
+  state.refunds[payment.paymentId] = [refund, ...(state.refunds[payment.paymentId] ?? [])];
+  return refund;
+}
+
+/** Exécute les remboursements programmés arrivés à échéance. */
+function runSchedules(items: Generated[], state: DemoPaymentsState, now: number) {
+  for (const schedule of state.scheduled ?? []) {
+    if (schedule.status !== 'SCHEDULED' || Date.parse(schedule.scheduledAt) > now) continue;
+    const item = items.find((entry) => entry.payment.paymentId === schedule.paymentId);
+    try {
+      if (!item) throw new Error('Paiement introuvable.');
+      const refund = applyRefund(
+        item,
+        state,
+        { amount: schedule.amount ?? undefined, reason: schedule.reason },
+        schedule.createdBy ?? 'Programmation',
+        new Date(schedule.scheduledAt),
+      );
+      schedule.status = 'EXECUTED';
+      schedule.refundId = refund.refundId;
+    } catch (cause) {
+      schedule.status = 'FAILED';
+      schedule.failureReason = cause instanceof Error ? cause.message : 'Échec du remboursement.';
+    }
+  }
+}
+
 async function dataset<T>(
   read: (items: Generated[], state: DemoPaymentsState, user: StoredUser) => T,
 ): Promise<T> {
   return withCurrentUser((user) => {
     const now = Date.now();
     if (!user.payments || now - user.payments.anchor > REANCHOR_MS) {
-      user.payments = { anchor: now, refunds: user.payments?.refunds ?? {} };
+      user.payments = { ...user.payments, anchor: now, refunds: user.payments?.refunds ?? {} };
     }
-    return read(generate(user, user.payments.anchor), user.payments, user);
+    const state = user.payments;
+    const created = (state.created ?? []).map((payment) => ({
+      payment: settle(payment, now),
+      seededRefund: null,
+    }));
+    const items = [...generate(user, state.anchor), ...created];
+    runSchedules(items, state, now);
+    return read(items, state, user);
   });
 }
 
@@ -381,44 +477,137 @@ export const demoPaymentsApi: PaymentsApi = {
 
   async refund(paymentId, request) {
     await wait(900);
+    return dataset((items, state, user) =>
+      applyRefund(find(items, paymentId), state, request, `${user.firstName} ${user.lastName}`),
+    );
+  },
+
+  async create(request) {
+    await wait(900);
+    return dataset((items, state, user) => {
+      const account = user.providerAccounts.find((entry) => entry.id === request.providerAccountId);
+      if (!account || account.status !== 'ACTIVE') {
+        throw new ApiError('http', 'Ce compte prestataire n’est pas actif.', { status: 422 });
+      }
+      if (!Number.isInteger(request.amount) || request.amount < 100 * 100) {
+        throw new ApiError('http', 'Le montant minimum est de 100.', { status: 422 });
+      }
+      if (!/^\+\d{9,14}$/.test(request.payerPhone)) {
+        throw new ApiError('http', 'Numéro de téléphone invalide.', { status: 422 });
+      }
+      const now = new Date();
+      const sequence = items.length + 1;
+      const number = paymentNumber(now, sequence);
+      const payment: Payment = {
+        paymentId: `pay_ui_${now.getTime().toString(36)}`,
+        paymentNumber: number,
+        correlationId: null,
+        applicationId: null,
+        providerAccountId: account.id,
+        customerId: null,
+        environment: account.environment,
+        provider: account.provider,
+        status: 'PENDING',
+        amount: request.amount,
+        currency: user.preferences?.currency ?? user.organization?.defaultCurrency ?? 'XOF',
+        payerPhone: request.payerPhone,
+        actualPayerPhone: null,
+        externalReference: request.externalReference?.trim() || null,
+        failureReason: null,
+        paidAt: null,
+        expiresAt: new Date(now.getTime() + request.expiresInMinutes * 60_000).toISOString(),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      };
+      state.created = [payment, ...(state.created ?? [])];
+      return payment;
+    });
+  },
+
+  async scheduledRefunds() {
+    await wait(200);
+    return dataset((_items, state) =>
+      [...(state.scheduled ?? [])].sort((a, b) => {
+        // Prochaines échéances d'abord, puis l'historique du plus récent au plus ancien.
+        const pendingA = a.status === 'SCHEDULED' ? 0 : 1;
+        const pendingB = b.status === 'SCHEDULED' ? 0 : 1;
+        if (pendingA !== pendingB) return pendingA - pendingB;
+        return pendingA === 0
+          ? a.scheduledAt.localeCompare(b.scheduledAt)
+          : b.scheduledAt.localeCompare(a.scheduledAt);
+      }),
+    );
+  },
+
+  async scheduleRefund(paymentId, request) {
+    await wait(700);
     return dataset((items, state, user) => {
       const item = find(items, paymentId);
       const payment = withRefunds(item, state);
       if (!isRefundable(payment)) {
-        throw new ApiError(
-          'http',
-          `Impossible de rembourser un paiement au statut ${payment.status}.`,
-          { status: 409 },
-        );
+        throw new ApiError('http', 'Seul un paiement réussi peut être remboursé.', {
+          status: 409,
+        });
       }
-      const already = refundsOf(item, state)
-        .filter((refund) => refund.status === 'SUCCESS')
-        .reduce((total, refund) => total + refund.amount, 0);
-      const remaining = payment.amount - already;
-      const amount = request.amount ?? remaining;
-      if (request.amount !== undefined && !supportsPartialRefund(payment) && amount < remaining) {
-        throw new ApiError('http', 'Wave ne permet que le remboursement total d’un paiement.', {
+      const when = Date.parse(request.scheduledAt);
+      if (Number.isNaN(when) || when < Date.now() + 60_000) {
+        throw new ApiError('http', 'La date d’exécution doit être dans le futur.', {
           status: 422,
         });
       }
-      if (amount <= 0 || amount > remaining) {
-        throw new ApiError('http', 'Le montant dépasse le solde remboursable.', { status: 422 });
+      if (
+        (state.scheduled ?? []).some(
+          (entry) => entry.paymentId === paymentId && entry.status === 'SCHEDULED',
+        )
+      ) {
+        throw new ApiError('http', 'Un remboursement est déjà programmé pour ce paiement.', {
+          status: 409,
+        });
       }
-      const refund: Refund = {
-        refundId: `ref_${Date.now().toString(36)}`,
+      const remaining = remainingOf(item, state);
+      if (request.amount !== undefined) {
+        if (!supportsPartialRefund(payment) && request.amount < remaining) {
+          throw new ApiError('http', 'Wave ne permet que le remboursement total d’un paiement.', {
+            status: 422,
+          });
+        }
+        if (request.amount <= 0 || request.amount > remaining) {
+          throw new ApiError('http', 'Le montant dépasse le solde remboursable.', {
+            status: 422,
+          });
+        }
+      }
+      const schedule: ScheduledRefund = {
+        id: `sch_${Date.now().toString(36)}`,
         paymentId,
         paymentNumber: payment.paymentNumber,
+        provider: payment.provider,
         payerPhone: payment.payerPhone,
-        amount,
-        status: 'SUCCESS',
+        amount: request.amount ?? null,
+        currency: payment.currency,
         reason: request.reason.trim(),
+        scheduledAt: new Date(when).toISOString(),
+        status: 'SCHEDULED',
+        refundId: null,
         failureReason: null,
-        providerRefundId: `demo_${Date.now().toString(36)}`,
-        requestedBy: `${user.firstName} ${user.lastName}`,
+        createdBy: `${user.firstName} ${user.lastName}`,
         createdAt: new Date().toISOString(),
       };
-      state.refunds[paymentId] = [refund, ...(state.refunds[paymentId] ?? [])];
-      return refund;
+      state.scheduled = [schedule, ...(state.scheduled ?? [])];
+      return schedule;
+    });
+  },
+
+  async cancelScheduledRefund(id) {
+    await wait(400);
+    return dataset((_items, state) => {
+      const schedule = state.scheduled?.find((entry) => entry.id === id);
+      if (!schedule) throw new ApiError('http', 'Programmation introuvable.', { status: 404 });
+      if (schedule.status !== 'SCHEDULED') {
+        throw new ApiError('http', 'Ce remboursement n’est plus modifiable.', { status: 409 });
+      }
+      schedule.status = 'CANCELLED';
+      return { ...schedule };
     });
   },
 };

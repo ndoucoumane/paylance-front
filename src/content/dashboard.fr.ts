@@ -77,6 +77,7 @@ export const dashboard = {
     copyNumber: 'Copier le numéro',
     copyPhone: 'Copier le téléphone',
     refund: 'Rembourser',
+    schedule: 'Programmer un remboursement',
     refundUnavailable: 'Seul un paiement réussi peut être remboursé',
     copied: 'Copié dans le presse-papiers',
   },
@@ -145,4 +146,116 @@ export const dashboard = {
   } satisfies Record<PaymentStatus, string>,
 
   refundStatuses: { PENDING: 'En cours', SUCCESS: 'Effectué', FAILED: 'Échoué' },
+
+  overviewLink: {
+    title: 'Toutes vos transactions',
+    text: 'Recherchez, filtrez, exportez, encaissez et remboursez depuis la page Transactions.',
+    cta: 'Ouvrir les transactions',
+  },
+
+  page: {
+    title: 'Transactions',
+    subtitle: 'Encaissez, suivez et remboursez vos paiements Wave et Orange Money.',
+    newPayment: 'Nouveau paiement',
+    refund: 'Rembourser',
+    schedule: 'Programmer',
+    scheduleLong: 'Programmer un remboursement',
+    sectionsLabel: 'Sections',
+    sections: { history: 'Historique', scheduled: 'Remboursements programmés' },
+    sectionsShort: { history: 'Historique', scheduled: 'Programmés' },
+  },
+
+  /** Formulaire « Nouveau paiement ». */
+  payment: {
+    title: 'Nouveau paiement',
+    subtitle: 'Le client reçoit la demande sur son téléphone et la valide.',
+    amount: 'Montant à encaisser',
+    amountInvalid: (min: string, max: string) => `Saisissez un montant entre ${min} et ${max}.`,
+    quickAmounts: 'Montants rapides',
+    account: 'Encaisser avec',
+    accountRequired: 'Choisissez un compte prestataire.',
+    phone: 'Téléphone du client',
+    phoneHint: 'Le numéro rattaché au compte Wave ou Orange Money du client.',
+    phoneInvalid: 'Saisissez un numéro valide (8 à 10 chiffres).',
+    reference: 'Référence commande',
+    referencePlaceholder: 'CMD-10482',
+    description: 'Description',
+    descriptionPlaceholder: 'Ex. Commande de 3 articles, livraison incluse',
+    descriptionHint: 'Visible par le client sur la demande de paiement.',
+    expiry: 'Validité de la demande',
+    expiries: { 15: '15 min', 60: '1 heure', 1440: '24 heures' } as Record<15 | 60 | 1440, string>,
+    recap: (amount: string, provider: string, phone: string) =>
+      `${phone} recevra une demande de ${amount} via ${provider}.`,
+    cancel: 'Annuler',
+    submit: (amount: string) => (amount ? `Demander ${amount}` : 'Demander le paiement'),
+    errorTitle: 'Paiement impossible',
+    successTitle: 'Demande de paiement envoyée',
+    successText: 'Le statut passera à « Réussi » dès que le client aura validé.',
+    viewDetail: 'Voir le détail',
+    another: 'Nouveau paiement',
+    done: 'Terminer',
+    test: 'Test',
+  },
+
+  /** Choix de la transaction à rembourser. */
+  picker: {
+    title: 'Rembourser un paiement',
+    subtitle: 'Choisissez la transaction à rembourser.',
+    search: 'N° de transaction, téléphone, référence',
+    searchLabel: 'Rechercher une transaction remboursable',
+    listLabel: 'Transactions remboursables',
+    empty: 'Aucune transaction remboursable ne correspond.',
+    hint: 'Seuls les paiements réussis des 90 derniers jours sont proposés.',
+    change: 'Changer',
+    continue: 'Continuer',
+    select: 'Sélectionner',
+  },
+
+  /** Formulaire « Programmer un remboursement ». */
+  schedule: {
+    title: 'Programmer un remboursement',
+    subtitle: 'Exécuté automatiquement à la date choisie, annulable jusque-là.',
+    payment: 'Transaction',
+    paymentRequired: 'Choisissez la transaction à rembourser.',
+    amountStep: 'Montant et motif',
+    when: 'Date d’exécution',
+    date: 'Date',
+    time: 'Heure',
+    presets: {
+      tomorrow: 'Demain 9 h',
+      in3: 'Dans 3 jours',
+      in7: 'Dans 7 jours',
+      endOfMonth: 'Fin du mois',
+    },
+    whenInvalid: 'Choisissez une date future (au plus dans 90 jours).',
+    whenSummary: (date: string) => `Exécution prévue le ${date}`,
+    info: 'Le solde remboursable est vérifié au moment de l’exécution. Si le paiement a été remboursé entre-temps, la programmation échoue sans débit.',
+    cancel: 'Annuler',
+    submit: 'Programmer le remboursement',
+    success: 'Remboursement programmé',
+    errorTitle: 'Programmation impossible',
+  },
+
+  /** Liste des remboursements programmés. */
+  scheduled: {
+    title: 'Remboursements programmés',
+    subtitle: 'Exécutés automatiquement depuis votre compte marchand à l’échéance.',
+    upcoming: (count: number) => `${count} à venir`,
+    emptyTitle: 'Aucun remboursement programmé',
+    emptyText:
+      'Planifiez un remboursement pour l’exécuter plus tard, par exemple après un retour de marchandise.',
+    full: 'Solde total',
+    by: (who: string) => `par ${who}`,
+    cancel: 'Annuler',
+    cancelLabel: (number: string) => `Annuler le remboursement programmé de ${number}`,
+    cancelConfirm: (number: string) =>
+      `Annuler le remboursement programmé de la transaction ${number} ?`,
+    cancelled: 'Programmation annulée',
+    statuses: {
+      SCHEDULED: 'Programmé',
+      EXECUTED: 'Exécuté',
+      CANCELLED: 'Annulé',
+      FAILED: 'Échoué',
+    },
+  },
 };

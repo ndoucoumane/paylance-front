@@ -17,6 +17,7 @@ const PreferencesPage = lazy(() => import('./pages/onboarding/PreferencesPage'))
 const PlanPage = lazy(() => import('./pages/onboarding/PlanPage'));
 const ConnectProvidersPage = lazy(() => import('./pages/onboarding/ConnectProvidersPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const DashboardTransactionsPage = lazy(() => import('./pages/DashboardTransactionsPage'));
 const DashboardProvidersPage = lazy(() => import('./pages/DashboardProvidersPage'));
 
 export default function App() {
@@ -94,6 +95,14 @@ export default function App() {
                 element={
                   <SessionGate require="app">
                     <DashboardPage />
+                  </SessionGate>
+                }
+              />
+              <Route
+                path="/app/transactions"
+                element={
+                  <SessionGate require="app">
+                    <DashboardTransactionsPage />
                   </SessionGate>
                 }
               />

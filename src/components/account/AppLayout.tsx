@@ -11,6 +11,7 @@ import { DemoBanner } from './DemoBanner';
 
 const NAV = [
   { to: ROUTES.dashboard, label: t.app.nav.overview, end: true },
+  { to: ROUTES.dashboardTransactions, label: t.app.nav.transactions, end: false },
   { to: ROUTES.dashboardProviders, label: t.app.nav.providers, end: false },
 ];
 

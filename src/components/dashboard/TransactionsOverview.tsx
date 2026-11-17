@@ -1,18 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
+import { ArrowRight, ListOrdered } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { dashboard as t } from '../../content/dashboard.fr';
+import { ROUTES } from '../../lib/session/routing';
 import { useSession } from '../../lib/session/sessionContext';
 import { errorMessage } from '../../services/api/errors';
-import type { Payment, PaymentOverview, PeriodDays } from '../../services/payments/types';
+import type { PaymentOverview, PeriodDays } from '../../services/payments/types';
 import { Alert } from '../ui/Alert';
 import { Breakdown } from './Breakdown';
 import { KpiCards } from './KpiCards';
-import { PaymentDrawer } from './PaymentDrawer';
-import { RefundDialog } from './RefundDialog';
-import { useToast } from './toastContext';
-import { TransactionsTable } from './TransactionsTable';
+import { PeriodSelector } from './PeriodSelector';
 import { VolumeChart } from './VolumeChart';
-
-const PERIODS: PeriodDays[] = [7, 30, 90];
 
 function OverviewSkeleton() {
   return (
@@ -30,16 +28,12 @@ function OverviewSkeleton() {
   );
 }
 
-/** Tableau de bord des transactions : indicateurs, courbe, répartition et liste. */
+/** Vue d'ensemble : indicateurs, courbe et répartition. La liste vit sur la page Transactions. */
 export function TransactionsOverview({ currency }: { currency: string }) {
   const { api } = useSession();
-  const toast = useToast();
   const [period, setPeriod] = useState<PeriodDays>(30);
   const [overview, setOverview] = useState<PaymentOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [version, setVersion] = useState(0);
-  const [detail, setDetail] = useState<Payment | null>(null);
-  const [refunding, setRefunding] = useState<Payment | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,38 +45,11 @@ export function TransactionsOverview({ currency }: { currency: string }) {
     return () => {
       cancelled = true;
     };
-  }, [api, period, version]);
-
-  const closeDetail = useCallback(() => setDetail(null), []);
-  const closeRefund = useCallback(() => setRefunding(null), []);
+  }, [api, period]);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          role="radiogroup"
-          aria-label={t.periodLabel}
-          className="inline-flex rounded-full bg-white p-1 ring-1 ring-neutral-200"
-        >
-          {PERIODS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={period === value}
-              onClick={() => setPeriod(value)}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                period === value
-                  ? 'bg-neutral-950 text-white'
-                  : 'text-neutral-600 hover:text-neutral-950'
-              }`}
-            >
-              <span className="sm:hidden">{t.periodsShort[value]}</span>
-              <span className="hidden sm:inline">{t.periods[value]}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      <PeriodSelector value={period} onChange={setPeriod} />
 
       {error && (
         <Alert tone="error" title={t.table.emptyTitle}>
@@ -115,34 +82,25 @@ export function TransactionsOverview({ currency }: { currency: string }) {
         </>
       )}
 
-      <TransactionsTable
-        periodDays={period}
-        stats={overview?.current ?? null}
-        currency={currency}
-        version={version}
-        onOpen={setDetail}
-        onRefund={setRefunding}
-      />
-
-      <PaymentDrawer
-        payment={detail}
-        version={version}
-        onClose={closeDetail}
-        onRefund={setRefunding}
-      />
-      <RefundDialog
-        payment={refunding}
-        onClose={closeRefund}
-        onRefunded={(refund) => {
-          setRefunding(null);
-          setVersion((value) => value + 1);
-          toast(t.refund.success);
-          // Le tiroir ouvert affiche l'état réel du paiement après remboursement.
-          if (detail?.paymentId === refund.paymentId) {
-            api.payments.get(refund.paymentId).then(setDetail, () => undefined);
-          }
-        }}
-      />
+      <Link
+        to={ROUTES.dashboardTransactions}
+        className="group flex items-center gap-4 rounded-2xl bg-white p-5 ring-1 ring-neutral-200 transition-shadow hover:ring-neutral-300 sm:p-6"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-950 text-white">
+          <ListOrdered aria-hidden="true" className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold text-neutral-950">{t.overviewLink.title}</span>
+          <span className="mt-0.5 block text-sm text-neutral-500">{t.overviewLink.text}</span>
+        </span>
+        <span className="hidden items-center gap-1.5 text-sm font-semibold text-primary-strong sm:inline-flex">
+          {t.overviewLink.cta}
+          <ArrowRight
+            aria-hidden="true"
+            className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+          />
+        </span>
+      </Link>
     </div>
   );
 }

@@ -10,6 +10,7 @@ export const ROUTES = {
   plan: '/onboarding/plan',
   providers: '/onboarding/connect-providers',
   dashboard: '/app',
+  dashboardTransactions: '/app/transactions',
   dashboardProviders: '/app/prestataires',
 } as const;
 

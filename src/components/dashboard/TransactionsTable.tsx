@@ -1,4 +1,5 @@
 import {
+  CalendarClock,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -48,6 +49,7 @@ type Props = {
   version: number;
   onOpen: (payment: Payment) => void;
   onRefund: (payment: Payment) => void;
+  onSchedule?: (payment: Payment) => void;
 };
 
 function useDebounced<T>(value: T, delay = 300): T {
@@ -85,6 +87,7 @@ export function TransactionsTable({
   version,
   onOpen,
   onRefund,
+  onSchedule,
 }: Props) {
   const { api } = useSession();
   const toast = useToast();
@@ -171,6 +174,18 @@ export function TransactionsTable({
       hint: t.actions.refundUnavailable,
       separated: true,
     },
+    ...(onSchedule
+      ? [
+          {
+            id: 'schedule',
+            label: t.actions.schedule,
+            icon: CalendarClock,
+            onSelect: () => onSchedule(payment),
+            disabled: !isRefundable(payment),
+            hint: t.actions.refundUnavailable,
+          },
+        ]
+      : []),
   ];
 
   const exportCsv = async () => {

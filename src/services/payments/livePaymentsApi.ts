@@ -1,4 +1,5 @@
 import { currentOrganizationId, token } from '../account/liveAccountApi';
+import { ApiError } from '../api/errors';
 import { apiRequest } from '../api/http';
 import { periodStart } from './rules';
 import type {
@@ -94,5 +95,22 @@ export const livePaymentsApi: PaymentsApi = {
       body: request,
       ...(await auth()),
     });
+  },
+
+  // Pas encore d'endpoint côté DashboardPaymentController : message explicite plutôt qu'un 404.
+  async create() {
+    throw ApiError.notAvailable('Création de paiement depuis le tableau de bord');
+  },
+
+  async scheduledRefunds() {
+    throw ApiError.notAvailable('Remboursements programmés');
+  },
+
+  async scheduleRefund() {
+    throw ApiError.notAvailable('Remboursements programmés');
+  },
+
+  async cancelScheduledRefund() {
+    throw ApiError.notAvailable('Remboursements programmés');
   },
 };

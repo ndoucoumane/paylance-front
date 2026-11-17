@@ -12,6 +12,7 @@ export const account = {
     plan: 'Formule · Paylance',
     providers: 'Prestataires · Paylance',
     dashboard: 'Tableau de bord · Paylance',
+    dashboardTransactions: 'Transactions · Paylance',
     dashboardProviders: 'Comptes prestataires · Paylance',
   },
 
@@ -247,7 +248,11 @@ export const account = {
   },
 
   app: {
-    nav: { overview: 'Vue d’ensemble', providers: 'Comptes prestataires' },
+    nav: {
+      overview: 'Vue d’ensemble',
+      transactions: 'Transactions',
+      providers: 'Comptes prestataires',
+    },
     hello: (name: string) => `Bonjour ${name}`,
     org: (role: string) => `Vous êtes ${role.toLowerCase()} de cet espace.`,
     roles: {
