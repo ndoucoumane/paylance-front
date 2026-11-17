@@ -1,4 +1,4 @@
-import { CalendarClock, CalendarPlus } from 'lucide-react';
+import { CalendarPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { dashboard as t } from '../../content/dashboard.fr';
 import { formatMoney, formatPhone } from '../../lib/format';
@@ -8,6 +8,7 @@ import type { ScheduledRefund, ScheduledRefundStatus } from '../../services/paym
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
+import { EmptyState } from './EmptyState';
 import { ProviderMark } from './ProviderMark';
 import { useToast } from './toastContext';
 
@@ -113,17 +114,17 @@ export function ScheduledRefundsList({ version, onCreate, onCount }: Props) {
             <Spinner />
           </div>
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center px-6 py-16 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
-              <CalendarClock aria-hidden="true" className="h-6 w-6" />
-            </span>
-            <p className="mt-4 font-medium text-neutral-900">{s.emptyTitle}</p>
-            <p className="mt-1 max-w-sm text-sm text-neutral-500">{s.emptyText}</p>
-            <Button variant="secondaryLight" className="mt-5" onClick={onCreate}>
-              <CalendarPlus aria-hidden="true" className="h-4 w-4" />
-              {t.page.scheduleLong}
-            </Button>
-          </div>
+          <EmptyState
+            variant="scheduled"
+            title={s.emptyTitle}
+            text={s.emptyText}
+            action={
+              <Button variant="secondaryLight" onClick={onCreate}>
+                <CalendarPlus aria-hidden="true" className="h-4 w-4" />
+                {t.page.scheduleLong}
+              </Button>
+            }
+          />
         ) : (
           <ul className="divide-y divide-neutral-100">
             {items.map((item) => {

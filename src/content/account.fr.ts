@@ -252,7 +252,9 @@ export const account = {
       overview: 'Vue d’ensemble',
       transactions: 'Transactions',
       providers: 'Comptes prestataires',
+      providersShort: 'Prestataires',
     },
+    theme: { dark: 'Activer le mode sombre', light: 'Activer le mode clair' },
     hello: (name: string) => `Bonjour ${name}`,
     org: (role: string) => `Vous êtes ${role.toLowerCase()} de cet espace.`,
     roles: {

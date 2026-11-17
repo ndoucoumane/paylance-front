@@ -12,7 +12,7 @@ const variants: Record<ButtonVariant, string> = {
   primary: 'bg-primary-strong text-white hover:bg-primary-hover',
   secondaryDark: 'border border-white/25 text-white hover:border-white/40 hover:bg-white/10',
   secondaryLight:
-    'bg-white text-neutral-950 shadow-[inset_0_0_0_1px_rgba(10,10,10,0.15)] hover:bg-neutral-50 active:bg-neutral-100',
+    'bg-white text-neutral-950 ring-1 ring-inset ring-neutral-950/15 hover:bg-neutral-50 active:bg-neutral-100',
   ghostDark: 'text-white/90 hover:bg-white/10 hover:text-white',
   ghostLight: 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950',
 };

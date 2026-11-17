@@ -1,30 +1,33 @@
+import logoOm from '../../assets/images/logo-om.png';
+import logoWave from '../../assets/images/logo-wave.png';
 import type { PaymentProvider } from '../../services/account/types';
 
-const marks: Record<PaymentProvider, { label: string; className: string }> = {
-  WAVE: { label: 'W', className: 'bg-neutral-950 text-white' },
-  ORANGE_MONEY: {
-    label: 'OM',
-    className: 'bg-white text-neutral-950 ring-1 ring-inset ring-neutral-300',
-  },
+const logos: Record<PaymentProvider, string> = {
+  WAVE: logoWave,
+  ORANGE_MONEY: logoOm,
 };
 
-/** Monogramme d'opérateur (pas de logo de marque). */
+/** Logo d'opérateur à taille fixe (décoratif : le nom est toujours affiché à côté). */
 export function ProviderMark({
   provider,
   size = 'md',
 }: {
   provider: PaymentProvider;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
 }) {
-  const mark = marks[provider];
+  const px = { sm: 28, md: 36, lg: 44 }[size];
   return (
-    <span
+    <img
+      src={logos[provider]}
+      alt=""
       aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center rounded-lg font-semibold tracking-tight ${mark.className} ${
-        size === 'sm' ? 'h-7 w-7 text-[0.625rem]' : 'h-9 w-9 text-xs'
+      width={px}
+      height={px}
+      loading="lazy"
+      decoding="async"
+      className={`shrink-0 bg-[#fff] object-contain ring-1 ring-neutral-200 ${
+        { sm: 'h-7 w-7 rounded-lg', md: 'h-9 w-9 rounded-lg', lg: 'h-11 w-11 rounded-xl' }[size]
       }`}
-    >
-      {mark.label}
-    </span>
+    />
   );
 }

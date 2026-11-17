@@ -68,6 +68,7 @@ export function TransactionsOverview({ currency }: { currency: string }) {
                 <VolumeChart
                   volume={overview.dailyVolume}
                   counts={overview.dailyCount}
+                  previous={overview.previousDailyVolume}
                   currency={currency}
                   periodLabel={t.periods[period]}
                 />

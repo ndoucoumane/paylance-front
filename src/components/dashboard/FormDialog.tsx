@@ -18,7 +18,7 @@ export function ModalDialog({
   open: boolean;
   onClose: () => void;
   labelledBy: string;
-  size?: 'md' | 'lg';
+  size?: 'md' | 'lg' | 'xl';
   children: ReactNode;
 }) {
   const ref = useDialog(open, onClose);
@@ -27,7 +27,7 @@ export function ModalDialog({
       ref={ref}
       aria-labelledby={labelledBy}
       className={`ui-dialog m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-clip rounded-2xl bg-white p-0 text-neutral-950 shadow-float ${
-        size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
+        size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
       }`}
     >
       {open && children}

@@ -5,9 +5,8 @@ import { useSession } from '../../lib/session/sessionContext';
 import type { ProviderAccount } from '../../services/account/types';
 import type { Payment, PaymentStats, PeriodDays } from '../../services/payments/types';
 import { Button } from '../ui/Button';
-import { PaymentDrawer } from './PaymentDrawer';
+import { PaymentDetailDialog } from './PaymentDetailDialog';
 import { PaymentFormDialog } from './PaymentFormDialog';
-import { PeriodSelector } from './PeriodSelector';
 import { RefundDialog } from './RefundDialog';
 import { RefundPickerDialog } from './RefundPickerDialog';
 import { ScheduledRefundsList } from './ScheduledRefundsList';
@@ -149,7 +148,6 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
       >
         {section === 'history' ? (
           <>
-            <PeriodSelector value={period} onChange={setPeriod} />
             <TransactionsTable
               periodDays={period}
               stats={stats}
@@ -158,6 +156,8 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
               onOpen={setDetail}
               onRefund={setRefunding}
               onSchedule={openSchedule}
+              onPeriodChange={setPeriod}
+              onCreate={() => setPaying(true)}
             />
           </>
         ) : (
@@ -169,11 +169,12 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
         )}
       </div>
 
-      <PaymentDrawer
+      <PaymentDetailDialog
         payment={detail}
         version={version}
         onClose={closeDetail}
         onRefund={setRefunding}
+        onSchedule={openSchedule}
       />
       <RefundPickerDialog
         open={picking}

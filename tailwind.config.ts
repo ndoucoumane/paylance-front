@@ -9,11 +9,24 @@ import defaultTheme from 'tailwindcss/defaultTheme';
  * - primary (#0E9F6E) avec texte blanc ≈ 3,4:1 → réservé aux grandes surfaces / icônes
  * - accent (#F5A524) : uniquement sur fond ink ; sur fond clair, utiliser accent.strong
  */
+const SHADES = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
+/** Couleur lue dans une variable CSS (voir index.css) : permet le mode sombre de l'espace pro. */
+const v = (name: string) => `rgb(var(--c-${name}) / <alpha-value>)`;
+const palette = (name: string) =>
+  Object.fromEntries(SHADES.map((shade) => [shade, v(`${name}-${shade}`)]));
+
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
+        white: v('white'),
+        neutral: palette('neutral'),
+        emerald: palette('emerald'),
+        violet: palette('violet'),
+        sky: palette('sky'),
+        red: palette('red'),
+        amber: palette('amber'),
         // Gris neutres (sans teinte bleue) : structure, texte et zones sombres.
         ink: {
           DEFAULT: '#0A0A0A',
@@ -29,21 +42,21 @@ export default {
           'line-strong': '#A3A3A3',
         },
         content: {
-          DEFAULT: '#0A0A0A',
-          body: '#525252',
-          muted: '#6B6B6B',
+          DEFAULT: v('content'),
+          body: v('content-body'),
+          muted: v('content-muted'),
         },
         primary: {
-          DEFAULT: '#0E9F6E',
-          strong: '#0B7F58',
-          hover: '#096B4A',
-          soft: '#E8F6F0',
-          bright: '#34D399',
+          DEFAULT: v('primary'),
+          strong: v('primary-strong'),
+          hover: v('primary-hover'),
+          soft: v('primary-soft'),
+          bright: v('primary-bright'),
         },
         accent: {
           DEFAULT: '#F5A524',
-          soft: '#FEF3DC',
-          strong: '#8A5A00',
+          soft: v('accent-soft'),
+          strong: v('accent-strong'),
         },
       },
       fontFamily: {

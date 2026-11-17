@@ -52,14 +52,15 @@ export const livePaymentsApi: PaymentsApi = {
       fetchStats(start - span, start),
     ]);
     // Le backend ne fournit pas encore de série quotidienne : pas de courbe plutôt qu'une courbe inventée.
-    return { current, previous, dailyVolume: null, dailyCount: null };
+    return { current, previous, dailyVolume: null, dailyCount: null, previousDailyVolume: null };
   },
 
   async list(query: PaymentQuery): Promise<PaymentPage> {
     const params = new URLSearchParams({
       page: String(query.page),
       size: String(query.size),
-      sort: 'createdAt,desc',
+      // Pageable Spring : « champ,sens ».
+      sort: `${query.sort?.field ?? 'createdAt'},${query.sort?.direction ?? 'desc'}`,
       from: isoLocal(periodStart(query.periodDays)),
     });
     if (query.status) params.set('status', query.status);

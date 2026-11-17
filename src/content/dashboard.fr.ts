@@ -1,3 +1,4 @@
+import { formatNumber } from '../lib/format';
 import type { PaymentStatus } from '../services/payments/types';
 
 /** Textes de la vue d'ensemble (transactions), en français. */
@@ -25,6 +26,12 @@ export const dashboard = {
     unavailable:
       'La courbe quotidienne sera disponible lorsque le serveur exposera une série par jour.',
     tooltipCount: (count: number) => `${count} transaction${count > 1 ? 's' : ''}`,
+    legendCurrent: 'Cette période',
+    legendPrevious: 'Période précédente',
+    tooltipPrevious: (amount: string) => `Préc. : ${amount}`,
+    trend: (percent: string) => `${percent} vs période précédente`,
+    emptyTitle: 'Aucun encaissement sur la période',
+    emptyText: 'La courbe se dessinera dès votre premier paiement réussi.',
   },
 
   breakdown: {
@@ -37,7 +44,7 @@ export const dashboard = {
   table: {
     title: 'Transactions',
     subtitle: (count: number) =>
-      `${new Intl.NumberFormat('fr-FR').format(count)} transaction${count > 1 ? 's' : ''} sur la période`,
+      `${formatNumber(count)} transaction${count > 1 ? 's' : ''} sur la période`,
     search: 'N° de transaction, téléphone, référence',
     searchLabel: 'Rechercher une transaction',
     providerAll: 'Tous les opérateurs',
@@ -64,11 +71,23 @@ export const dashboard = {
     emptyFiltered: 'Aucune transaction ne correspond à ces filtres.',
     emptyPeriod: 'Aucune transaction sur cette période.',
     resetFilters: 'Effacer les filtres',
-    range: (from: number, to: number, total: number) =>
-      `${from}–${to} sur ${new Intl.NumberFormat('fr-FR').format(total)}`,
+    range: (from: number, to: number, total: number) => `${from}–${to} sur ${formatNumber(total)}`,
     previous: 'Page précédente',
     next: 'Page suivante',
     openDetail: (number: string) => `Voir le détail de la transaction ${number}`,
+    sortLabel: 'Trier',
+    sorts: {
+      'createdAt-desc': 'Plus récentes',
+      'createdAt-asc': 'Plus anciennes',
+      'amount-desc': 'Montant décroissant',
+      'amount-asc': 'Montant croissant',
+    },
+    date: 'Date',
+    emptyNewTitle: 'Vos transactions apparaîtront ici',
+    emptyNewText:
+      'Envoyez une première demande de paiement à un client : vous suivrez ici son statut en temps réel.',
+    emptyNewCta: 'Créer un paiement',
+    emptySearchTitle: 'Aucun résultat',
   },
 
   actions: {
@@ -109,7 +128,19 @@ export const dashboard = {
       MANUAL: 'Action manuelle',
     } as Record<string, string>,
     refund: 'Rembourser',
+    schedule: 'Programmer',
     refundable: (amount: string) => `${amount} remboursable`,
+    eyebrow: 'Transaction',
+    copy: 'Copier',
+    copyId: 'Copier l’identifiant technique',
+    via: (provider: string, phone: string) => `via ${provider} · ${phone}`,
+    sections: { payment: 'Paiement', customer: 'Client', technical: 'Référence technique' },
+    fields2: {
+      expiresAt: 'Expire le',
+      actualPayer: 'Payé depuis le',
+      none: '—',
+    },
+    totals: { collected: 'Encaissé', refunded: 'Remboursé', net: 'Net' },
   },
 
   refund: {
@@ -155,7 +186,7 @@ export const dashboard = {
 
   page: {
     title: 'Transactions',
-    subtitle: 'Encaissez, suivez et remboursez vos paiements Wave et Orange Money.',
+    subtitle: 'Encaissez, suivez et remboursez vos paiements',
     newPayment: 'Nouveau paiement',
     refund: 'Rembourser',
     schedule: 'Programmer',

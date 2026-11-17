@@ -1,15 +1,18 @@
 import {
+  ArrowDown,
+  ArrowUp,
   CalendarClock,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
   Copy,
   Eye,
-  Inbox,
   Phone,
+  Plus,
   RotateCcw,
   Search,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { dashboard as t } from '../../content/dashboard.fr';
 import {
   currencyLabel,
@@ -25,13 +28,18 @@ import { isRefundable } from '../../services/payments/rules';
 import type {
   Payment,
   PaymentPage,
+  PaymentSort,
+  PaymentSortField,
   PaymentStats,
   PaymentStatus,
   PeriodDays,
 } from '../../services/payments/types';
 import { Alert } from '../ui/Alert';
+import { Button } from '../ui/Button';
 import { selectClass } from '../ui/form/Field';
 import { ActionMenu, type MenuAction } from './ActionMenu';
+import { EmptyState } from './EmptyState';
+import { PeriodSelector } from './PeriodSelector';
 import { ProviderMark } from './ProviderMark';
 import { providerNames } from './providers';
 import { StatusBadge } from './StatusBadge';
@@ -50,7 +58,67 @@ type Props = {
   onOpen: (payment: Payment) => void;
   onRefund: (payment: Payment) => void;
   onSchedule?: (payment: Payment) => void;
+  /** Affiche le choix de la période à côté du bouton Exporter. */
+  onPeriodChange?: (period: PeriodDays) => void;
+  /** Bouton « Créer un paiement » de l'état vide (nouveau marchand). */
+  onCreate?: () => void;
 };
+
+const DEFAULT_SORT: PaymentSort = { field: 'createdAt', direction: 'desc' };
+const SORT_KEYS = ['createdAt-desc', 'createdAt-asc', 'amount-desc', 'amount-asc'] as const;
+type SortKey = (typeof SORT_KEYS)[number];
+const sortKey = (sort: PaymentSort) => `${sort.field}-${sort.direction}` as SortKey;
+const fromKey = (key: SortKey): PaymentSort => {
+  const [field, direction] = key.split('-') as [PaymentSortField, PaymentSort['direction']];
+  return { field, direction };
+};
+
+/** En-tête de colonne triable : un clic trie, un second inverse le sens. */
+function SortHeader({
+  field,
+  sort,
+  onSort,
+  align = 'left',
+  className,
+  children,
+}: {
+  field: PaymentSortField;
+  sort: PaymentSort;
+  onSort: (sort: PaymentSort) => void;
+  align?: 'left' | 'right';
+  className: string;
+  children: ReactNode;
+}) {
+  const active = sort.field === field;
+  const Icon = !active ? ChevronsUpDown : sort.direction === 'asc' ? ArrowUp : ArrowDown;
+  return (
+    <th
+      scope="col"
+      aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className={className}
+    >
+      <button
+        type="button"
+        onClick={() =>
+          onSort({
+            field,
+            // Premier clic : du plus grand / plus récent au plus petit / plus ancien.
+            direction: active && sort.direction === 'desc' ? 'asc' : 'desc',
+          })
+        }
+        className={`-mx-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium transition-colors hover:bg-neutral-100 hover:text-neutral-900 ${
+          active ? 'text-neutral-900' : ''
+        } ${align === 'right' ? 'flex-row-reverse' : ''}`}
+      >
+        {children}
+        <Icon
+          aria-hidden="true"
+          className={`h-3.5 w-3.5 ${active ? 'text-neutral-900' : 'text-neutral-400'}`}
+        />
+      </button>
+    </th>
+  );
+}
 
 function useDebounced<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value);
@@ -88,6 +156,8 @@ export function TransactionsTable({
   onOpen,
   onRefund,
   onSchedule,
+  onPeriodChange,
+  onCreate,
 }: Props) {
   const { api } = useSession();
   const toast = useToast();
@@ -100,8 +170,9 @@ export function TransactionsTable({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [sort, setSort] = useState<PaymentSort>(DEFAULT_SORT);
 
-  useEffect(() => setPage(0), [tab, provider, q, periodDays]);
+  useEffect(() => setPage(0), [tab, provider, q, periodDays, sort]);
 
   const query = useMemo(
     () => ({
@@ -109,10 +180,11 @@ export function TransactionsTable({
       status: tab === 'ALL' ? undefined : (tab as PaymentStatus),
       provider: provider || undefined,
       q: q || undefined,
+      sort,
       page,
       size: PAGE_SIZE,
     }),
-    [periodDays, tab, provider, q, page],
+    [periodDays, tab, provider, q, sort, page],
   );
 
   useEffect(() => {
@@ -252,14 +324,17 @@ export function TransactionsTable({
             {t.table.subtitle(stats?.totalCount ?? 0)}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void exportCsv()}
-          disabled={exporting || total === 0}
-          className="inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-semibold text-neutral-900 shadow-[inset_0_0_0_1px_rgba(10,10,10,0.15)] transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {exporting ? t.exporting : t.export}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onPeriodChange && <PeriodSelector value={periodDays} onChange={onPeriodChange} />}
+          <button
+            type="button"
+            onClick={() => void exportCsv()}
+            disabled={exporting || total === 0}
+            className="inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-semibold text-neutral-900 ring-1 ring-inset ring-neutral-950/15 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {exporting ? t.exporting : t.export}
+          </button>
+        </div>
       </div>
 
       {/* Onglets de statut */}
@@ -316,19 +391,34 @@ export function TransactionsTable({
             className="h-10 w-full rounded-full border border-neutral-200 bg-neutral-50 pl-10 pr-4 text-sm text-neutral-950 transition-colors placeholder:text-neutral-400 hover:border-neutral-300 focus:border-primary-strong focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/15"
           />
         </div>
-        <select
-          value={provider}
-          onChange={(event) => setProvider(event.target.value as PaymentProvider | '')}
-          aria-label={t.table.providerLabel}
-          className={`${selectClass} h-10 rounded-full border-neutral-200 bg-neutral-50 text-sm sm:w-56`}
-        >
-          <option value="">{t.table.providerAll}</option>
-          {(Object.keys(providerNames) as PaymentProvider[]).map((key) => (
-            <option key={key} value={key}>
-              {providerNames[key]}
-            </option>
-          ))}
-        </select>
+        <div className="grid gap-3 sm:grid-cols-2 md:flex">
+          <select
+            value={provider}
+            onChange={(event) => setProvider(event.target.value as PaymentProvider | '')}
+            aria-label={t.table.providerLabel}
+            className={`${selectClass} h-10 rounded-full border-neutral-200 bg-neutral-50 text-sm md:w-56`}
+          >
+            <option value="">{t.table.providerAll}</option>
+            {(Object.keys(providerNames) as PaymentProvider[]).map((key) => (
+              <option key={key} value={key}>
+                {providerNames[key]}
+              </option>
+            ))}
+          </select>
+          {/* Sur mobile, pas d'en-têtes de colonnes : le tri passe par une liste. */}
+          <select
+            value={sortKey(sort)}
+            onChange={(event) => setSort(fromKey(event.target.value as SortKey))}
+            aria-label={t.table.sortLabel}
+            className={`${selectClass} h-10 rounded-full border-neutral-200 bg-neutral-50 text-sm md:hidden`}
+          >
+            {SORT_KEYS.map((key) => (
+              <option key={key} value={key}>
+                {t.table.sorts[key]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {error && (
@@ -344,46 +434,83 @@ export function TransactionsTable({
         {loading && !data ? (
           <SkeletonRows />
         ) : data && data.items.length === 0 ? (
-          <div className="flex flex-col items-center px-6 py-16 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500">
-              <Inbox aria-hidden="true" className="h-6 w-6" />
-            </span>
-            <p className="mt-4 font-medium text-neutral-900">{t.table.emptyTitle}</p>
-            <p className="mt-1 text-sm text-neutral-500">
-              {filtered ? t.table.emptyFiltered : t.table.emptyPeriod}
-            </p>
-            {filtered && (
-              <button
-                type="button"
-                onClick={() => {
-                  setTab('ALL');
-                  setProvider('');
-                  setSearch('');
-                }}
-                className="mt-4 text-sm font-semibold text-primary-strong underline-offset-4 hover:underline"
-              >
-                {t.table.resetFilters}
-              </button>
-            )}
-          </div>
+          filtered ? (
+            <EmptyState
+              variant="search"
+              title={t.table.emptySearchTitle}
+              text={t.table.emptyFiltered}
+              action={
+                <Button
+                  variant="secondaryLight"
+                  onClick={() => {
+                    setTab('ALL');
+                    setProvider('');
+                    setSearch('');
+                  }}
+                >
+                  {t.table.resetFilters}
+                </Button>
+              }
+            />
+          ) : periodDays === 90 ? (
+            // Rien sur la plus longue période : très probablement un nouveau marchand.
+            <EmptyState
+              variant="transactions"
+              title={t.table.emptyNewTitle}
+              text={t.table.emptyNewText}
+              action={
+                onCreate && (
+                  <Button onClick={onCreate}>
+                    <Plus aria-hidden="true" className="h-4 w-4" />
+                    {t.table.emptyNewCta}
+                  </Button>
+                )
+              }
+            />
+          ) : (
+            <EmptyState
+              variant="transactions"
+              title={t.table.emptyTitle}
+              text={t.table.emptyPeriod}
+              action={
+                onPeriodChange && (
+                  <Button variant="secondaryLight" onClick={() => onPeriodChange(90)}>
+                    {t.periods[90]}
+                  </Button>
+                )
+              }
+            />
+          )
         ) : data ? (
           <div className={`transition-opacity ${loading ? 'opacity-60' : ''}`}>
             {/* Bureau */}
             <table className="hidden w-full border-collapse text-left md:table">
               <thead>
                 <tr className="text-xs font-medium text-neutral-500">
-                  <th scope="col" className="py-3 pl-6 pr-3 font-medium">
+                  <SortHeader
+                    field="createdAt"
+                    sort={sort}
+                    onSort={setSort}
+                    className="py-3 pl-6 pr-3"
+                  >
                     {t.table.columns.transaction}
-                  </th>
+                    <span className="sr-only"> ({t.table.date})</span>
+                  </SortHeader>
                   <th scope="col" className="px-3 py-3 font-medium">
                     {t.table.columns.customer}
                   </th>
                   <th scope="col" className="hidden px-3 py-3 font-medium lg:table-cell">
                     {t.table.columns.provider}
                   </th>
-                  <th scope="col" className="px-3 py-3 text-right font-medium">
+                  <SortHeader
+                    field="amount"
+                    sort={sort}
+                    onSort={setSort}
+                    align="right"
+                    className="px-3 py-3 text-right"
+                  >
                     {t.table.columns.amount}
-                  </th>
+                  </SortHeader>
                   <th scope="col" className="px-3 py-3 font-medium">
                     {t.table.columns.status}
                   </th>
@@ -514,7 +641,7 @@ export function TransactionsTable({
               onClick={() => setPage((value) => Math.max(0, value - 1))}
               disabled={page === 0 || loading}
               aria-label={t.table.previous}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 shadow-[inset_0_0_0_1px_rgba(10,10,10,0.12)] transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 ring-1 ring-inset ring-neutral-950/15 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronLeft aria-hidden="true" className="h-4 w-4" />
             </button>
@@ -523,7 +650,7 @@ export function TransactionsTable({
               onClick={() => setPage((value) => value + 1)}
               disabled={to >= total || loading}
               aria-label={t.table.next}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 shadow-[inset_0_0_0_1px_rgba(10,10,10,0.12)] transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 ring-1 ring-inset ring-neutral-950/15 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronRight aria-hidden="true" className="h-4 w-4" />
             </button>
