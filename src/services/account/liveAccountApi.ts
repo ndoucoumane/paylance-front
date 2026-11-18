@@ -4,17 +4,17 @@ import { ApiError } from '../api/errors';
 import { apiRequest } from '../api/http';
 import { livePaymentsApi } from '../payments/livePaymentsApi';
 import type { AccountApi } from './accountApi';
-import { findCountry } from './referenceData';
-import type { Organization, ProviderAccount, UserAccount } from './types';
+import type { AccountSnapshot, Organization, ProviderAccount, UserAccount } from './types';
 
 /**
  * Implémentation réelle : Keycloak pour l'identité, API Paylance pour le reste.
  *
- * Seuls les contrats présents dans le backend sont appelés :
- * - POST/GET /api/v1/organizations (OrganizationCreateRequest / OrganizationResponse) ;
- * - GET/POST /api/v1/dashboard/provider-accounts (ProviderAccountCreateRequest / Response).
- * Ces routes sont autorisées par SecurityConfig, mais leurs contrôleurs restent à écrire.
+ * Routes branchées (voir paylance-backend/docs/message-front-2026-11-18.md) :
+ * - GET /api/v1/me : session, organisation et progression, calculées par le serveur ;
+ * - POST/GET /api/v1/organizations ;
+ * - GET/POST /api/v1/dashboard/provider-accounts, POST …/{id}/test et …/{id}/disable.
  * Les autres fonctions lèvent une erreur « non disponible » au lieu d'appeler une route inventée.
+ * La connexion passe par la page Keycloak (PKCE) en attendant les routes /public/auth/*.
  */
 
 async function keycloak(): Promise<Keycloak> {
@@ -23,9 +23,10 @@ async function keycloak(): Promise<Keycloak> {
 
 export async function token(): Promise<string> {
   const kc = await keycloak();
-  if (!kc.authenticated) throw new ApiError('http', 'Session expirée', { status: 401 });
+  if (!kc.authenticated)
+    throw new ApiError('http', 'Votre session a expiré. Reconnectez-vous.', { status: 401 });
   await kc.updateToken(30).catch(() => {
-    throw new ApiError('http', 'Session expirée', { status: 401 });
+    throw new ApiError('http', 'Votre session a expiré. Reconnectez-vous.', { status: 401 });
   });
   return kc.token!;
 }
@@ -56,6 +57,9 @@ export async function currentOrganizationId(): Promise<string> {
   return first.id;
 }
 
+const providerAccountPath = (id: string) =>
+  `/api/v1/dashboard/provider-accounts/${encodeURIComponent(id)}`;
+
 const notAvailable = (feature: string) => () => Promise.reject(ApiError.notAvailable(feature));
 
 export const liveAccountApi: AccountApi = {
@@ -66,8 +70,10 @@ export const liveAccountApi: AccountApi = {
   async getSnapshot() {
     const kc = await keycloak();
     if (!kc.authenticated) return null;
-    // Pas encore d'endpoint pour lire la progression de l'onboarding.
-    throw ApiError.notAvailable('Suivi de la progression de l’inscription');
+    // Le serveur fait foi : e-mail vérifié, organisation et progression ne sont jamais déduits ici.
+    const snapshot = await apiRequest<AccountSnapshot>('/api/v1/me', { token: await token() });
+    organizationId = snapshot.organization?.id ?? null;
+    return snapshot;
   },
 
   async login(email) {
@@ -88,15 +94,12 @@ export const liveAccountApi: AccountApi = {
   getCompany: notAvailable('Profil de l’entreprise'),
 
   async saveCompany(profile) {
-    // Le backend n'accepte aujourd'hui que nom, pays et devise (OrganizationCreateRequest).
+    // Le backend n'accepte aujourd'hui que le nom et le pays : il déduit lui-même la devise.
+    // Le reste du profil attend PUT /organizations/current/profile.
     const organization = await apiRequest<Organization>('/api/v1/organizations', {
       method: 'POST',
       token: await token(),
-      body: {
-        name: profile.tradeName,
-        country: profile.country,
-        defaultCurrency: findCountry(profile.country)?.currency,
-      },
+      body: { name: profile.tradeName, country: profile.country },
     });
     organizationId = organization.id;
     return organization;
@@ -124,8 +127,21 @@ export const liveAccountApi: AccountApi = {
     });
   },
 
-  // ProviderAccountService.testConnection / disable existent, mais sans route publiée.
-  testProviderAccount: notAvailable('Test de connexion du compte prestataire'),
-  disableProviderAccount: notAvailable('Désactivation du compte prestataire'),
+  async testProviderAccount(id) {
+    return apiRequest<ProviderAccount>(`${providerAccountPath(id)}/test`, {
+      method: 'POST',
+      token: await token(),
+      organizationId: await currentOrganizationId(),
+    });
+  },
+
+  async disableProviderAccount(id) {
+    return apiRequest<ProviderAccount>(`${providerAccountPath(id)}/disable`, {
+      method: 'POST',
+      token: await token(),
+      organizationId: await currentOrganizationId(),
+    });
+  },
+
   completeProvidersStep: notAvailable('Suivi de la progression de l’inscription'),
 };

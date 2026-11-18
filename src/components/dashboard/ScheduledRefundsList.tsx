@@ -34,12 +34,14 @@ const year = new Intl.DateTimeFormat('fr-FR', { year: 'numeric' });
 type Props = {
   /** Incrémenté après une programmation pour recharger la liste. */
   version: number;
+  /** OWNER ou ADMIN : programmer et annuler. Les autres rôles consultent seulement. */
+  canManage: boolean;
   onCreate: () => void;
   onCount: (upcoming: number) => void;
 };
 
 /** Échéancier des remboursements programmés, avec annulation. */
-export function ScheduledRefundsList({ version, onCreate, onCount }: Props) {
+export function ScheduledRefundsList({ version, canManage, onCreate, onCount }: Props) {
   const { api } = useSession();
   const toast = useToast();
   const [items, setItems] = useState<ScheduledRefund[] | null>(null);
@@ -86,16 +88,20 @@ export function ScheduledRefundsList({ version, onCreate, onCount }: Props) {
 
   const actionsFor = (item: ScheduledRefund): MenuAction[] => [
     { id: 'view', label: s.view, icon: Eye, onSelect: () => setDetailId(item.id) },
-    {
-      id: 'cancel',
-      label: s.cancel,
-      icon: CalendarX2,
-      tone: 'danger',
-      onSelect: () => void cancel(item),
-      disabled: item.status !== 'SCHEDULED' || cancelling === item.id,
-      hint: s.cancelUnavailable,
-      separated: true,
-    },
+    ...(canManage
+      ? [
+          {
+            id: 'cancel',
+            label: s.cancel,
+            icon: CalendarX2,
+            tone: 'danger',
+            onSelect: () => void cancel(item),
+            disabled: item.status !== 'SCHEDULED' || cancelling === item.id,
+            hint: s.cancelUnavailable,
+            separated: true,
+          } satisfies MenuAction,
+        ]
+      : []),
   ];
 
   const upcoming = items?.filter((item) => item.status === 'SCHEDULED').length ?? 0;
@@ -138,10 +144,12 @@ export function ScheduledRefundsList({ version, onCreate, onCount }: Props) {
             title={s.emptyTitle}
             text={s.emptyText}
             action={
-              <Button variant="secondaryLight" onClick={onCreate}>
-                <CalendarPlus aria-hidden="true" className="h-4 w-4" />
-                {t.page.scheduleLong}
-              </Button>
+              canManage && (
+                <Button variant="secondaryLight" onClick={onCreate}>
+                  <CalendarPlus aria-hidden="true" className="h-4 w-4" />
+                  {t.page.scheduleLong}
+                </Button>
+              )
             }
           />
         ) : (
@@ -346,6 +354,7 @@ export function ScheduledRefundsList({ version, onCreate, onCount }: Props) {
       <ScheduledRefundDetailDialog
         item={detail}
         cancelling={cancelling === detail?.id}
+        canCancel={canManage}
         onClose={() => setDetailId(null)}
         onCancel={(item) => void cancel(item)}
       />

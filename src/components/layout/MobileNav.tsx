@@ -38,7 +38,7 @@ export function MobileNav({ menus }: Props) {
   }, [open]);
 
   return (
-    <div className="lg:hidden">
+    <div className="xl:hidden">
       <button
         ref={toggleRef}
         type="button"

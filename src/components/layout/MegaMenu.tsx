@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState, type FocusEvent, type PointerEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { NavMenu } from '../../content/fr';
@@ -79,14 +79,14 @@ export function MegaMenu({ menus }: Props) {
   };
 
   return (
-    <ul ref={listRef} className="flex items-center gap-1">
+    <ul ref={listRef} className="flex items-center gap-0.5 xl:gap-1">
       {menus.map((menu) => {
         if (menu.href) {
           return (
             <li key={menu.id}>
               <Link
                 to={menu.href}
-                className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-950"
+                className="inline-flex items-center whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-950 xl:px-3"
               >
                 {menu.label}
               </Link>
@@ -95,7 +95,7 @@ export function MegaMenu({ menus }: Props) {
         }
         const isOpen = open?.id === menu.id;
         const panelId = `menu-panneau-${menu.id}`;
-        const multiColumn = menu.columns.length > 1;
+        const single = menu.columns.length === 1;
         return (
           <li
             key={menu.id}
@@ -109,7 +109,7 @@ export function MegaMenu({ menus }: Props) {
               aria-expanded={isOpen}
               aria-controls={panelId}
               onClick={() => onToggle(menu.id)}
-              className={`inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium transition-colors xl:px-3 ${
                 isOpen
                   ? 'bg-neutral-100 text-neutral-950'
                   : 'text-neutral-600 hover:text-neutral-950'
@@ -122,32 +122,55 @@ export function MegaMenu({ menus }: Props) {
               />
             </button>
 
-            <div
-              id={panelId}
-              hidden={!isOpen}
-              className="absolute left-1/2 top-full w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 pt-2"
-            >
-              <div
-                className={`grid gap-6 rounded-xl bg-surface-card p-4 text-content shadow-float ring-1 ring-black/5 ${
-                  multiColumn ? 'grid-cols-2' : 'grid-cols-1'
-                }`}
-              >
-                {menu.columns.map((column, columnIndex) => (
-                  <div key={column.title ?? columnIndex} className="w-72">
-                    {column.title && (
-                      <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                        {column.title}
+            {/* Panneau pleine largeur : du logo à « Créer un compte » (zone utile du Container). */}
+            <div id={panelId} hidden={!isOpen} className="absolute inset-x-8 top-full pt-3">
+              <div className="ui-mega grid grid-cols-[minmax(0,1fr)_19rem] overflow-hidden rounded-2xl bg-surface-card text-content shadow-float ring-1 ring-black/5">
+                <div
+                  className="grid gap-x-6 gap-y-2 p-5 xl:p-6"
+                  style={{
+                    gridTemplateColumns: `repeat(${menu.columns.length}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {menu.columns.map((column, columnIndex) => (
+                    <div key={column.title ?? columnIndex} className="min-w-0">
+                      {/* Sans titre propre, seule la première colonne porte le nom du menu. */}
+                      <p
+                        aria-hidden={!column.title && columnIndex > 0}
+                        className="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-content-muted"
+                      >
+                        {column.title ?? (columnIndex === 0 ? menu.label : '\u00a0')}
                       </p>
-                    )}
-                    <ul>
-                      {availableLinks(column.items).map((item) => (
-                        <li key={item.label}>
-                          <NavLinkItem item={item} variant="panel" />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                      <ul className={single ? 'grid grid-cols-2 gap-x-6' : ''}>
+                        {availableLinks(column.items).map((item) => (
+                          <li key={item.label}>
+                            <NavLinkItem item={item} variant="panel" />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                {menu.intro && (
+                  <aside className="flex flex-col border-l border-neutral-200 bg-surface p-6">
+                    <p className="text-base font-semibold tracking-[-0.01em] text-content">
+                      {menu.intro.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-content-muted">
+                      {menu.intro.text}
+                    </p>
+                    <Link
+                      to={menu.intro.cta.href}
+                      className="group mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-primary-strong"
+                    >
+                      {menu.intro.cta.label}
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                      />
+                    </Link>
+                  </aside>
+                )}
               </div>
             </div>
           </li>

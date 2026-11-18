@@ -44,11 +44,12 @@ function CopyButton({ value }: { value: string }) {
 type AccountRowProps = {
   account: ProviderAccount;
   testing: boolean;
+  canManage: boolean;
   onTest: () => void;
   onDisable: () => void;
 };
 
-function AccountRow({ account, testing, onTest, onDisable }: AccountRowProps) {
+function AccountRow({ account, testing, canManage, onTest, onDisable }: AccountRowProps) {
   const active = account.status === 'ACTIVE';
   return (
     <li className="py-4 first:pt-0 last:pb-0">
@@ -77,15 +78,17 @@ function AccountRow({ account, testing, onTest, onDisable }: AccountRowProps) {
               ))}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondaryLight" onClick={onTest} disabled={testing}>
-            {testing && <Spinner />}
-            {testing ? p.testing : active ? p.retest : p.test}
-          </Button>
-          <Button variant="ghostLight" onClick={onDisable} disabled={testing}>
-            {p.disable}
-          </Button>
-        </div>
+        {canManage && (
+          <div className="flex items-center gap-2">
+            <Button variant="secondaryLight" onClick={onTest} disabled={testing}>
+              {testing && <Spinner />}
+              {testing ? p.testing : active ? p.retest : p.test}
+            </Button>
+            <Button variant="ghostLight" onClick={onDisable} disabled={testing}>
+              {p.disable}
+            </Button>
+          </div>
+        )}
       </div>
 
       {account.lastVerificationMessage && (
@@ -120,6 +123,8 @@ type Props = {
   provider: ProviderDefinition;
   accounts: ProviderAccount[];
   testingIds: Set<string>;
+  /** OWNER ou ADMIN : ajouter, tester, désactiver. */
+  canManage: boolean;
   onCreated: (account: ProviderAccount) => void;
   onTest: (account: ProviderAccount) => void;
   onDisable: (account: ProviderAccount) => void;
@@ -130,6 +135,7 @@ export function ProviderConnectionCard({
   provider,
   accounts,
   testingIds,
+  canManage,
   onCreated,
   onTest,
   onDisable,
@@ -183,6 +189,7 @@ export function ProviderConnectionCard({
               key={account.id}
               account={account}
               testing={testingIds.has(account.id)}
+              canManage={canManage}
               onTest={() => onTest(account)}
               onDisable={() => onDisable(account)}
             />
@@ -190,23 +197,25 @@ export function ProviderConnectionCard({
         </ul>
       )}
 
-      <div className="mt-6">
-        {adding ? (
-          <ProviderAccountForm
-            provider={provider}
-            onCancel={() => setAdding(false)}
-            onCreated={(account) => {
-              setAdding(false);
-              onCreated(account);
-            }}
-          />
-        ) : (
-          <Button variant="secondaryLight" onClick={() => setAdding(true)}>
-            <Plus aria-hidden="true" className="h-4 w-4" />
-            {accounts.length ? p.addAnotherAccount : p.addAccount}
-          </Button>
-        )}
-      </div>
+      {canManage && (
+        <div className="mt-6">
+          {adding ? (
+            <ProviderAccountForm
+              provider={provider}
+              onCancel={() => setAdding(false)}
+              onCreated={(account) => {
+                setAdding(false);
+                onCreated(account);
+              }}
+            />
+          ) : (
+            <Button variant="secondaryLight" onClick={() => setAdding(true)}>
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              {accounts.length ? p.addAnotherAccount : p.addAccount}
+            </Button>
+          )}
+        </div>
+      )}
     </section>
   );
 }

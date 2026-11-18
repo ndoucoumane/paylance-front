@@ -14,7 +14,7 @@ export function SessionStatusScreen() {
   const { state, refresh, logout } = useSession();
   const [busy, setBusy] = useState(false);
 
-  const run = async (action: () => Promise<void>) => {
+  const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
     try {
       await action();

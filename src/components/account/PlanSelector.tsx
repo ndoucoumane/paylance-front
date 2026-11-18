@@ -2,14 +2,14 @@ import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { account as t } from '../../content/account.fr';
-import { useSession } from '../../lib/session/sessionContext';
+import { useSession, type SessionState } from '../../lib/session/sessionContext';
 import type { Plan, PlanId } from '../../services/account/types';
 import { errorMessage } from '../../services/api/errors';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { FormAlert } from './FormAlert';
 
-type Props = { plans: Plan[]; selected: PlanId | null; onSaved: () => void };
+type Props = { plans: Plan[]; selected: PlanId | null; onSaved: (next: SessionState) => void };
 
 /**
  * Formules Starter / Growth / Business. Seules les formules « self-serve » se choisissent ici,
@@ -25,8 +25,7 @@ export function PlanSelector({ plans, selected, onSaved }: Props) {
     setError(null);
     try {
       await api.selectPlan(plan.id);
-      await refresh();
-      onSaved();
+      onSaved(await refresh());
     } catch (cause) {
       setError(errorMessage(cause));
       setSaving(null);

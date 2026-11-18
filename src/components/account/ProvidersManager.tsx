@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { account as t } from '../../content/account.fr';
+import { useCanManage } from '../../lib/session/permissions';
 import { useSession } from '../../lib/session/sessionContext';
 import { PROVIDERS } from '../../services/account/referenceData';
 import type { ProviderAccount } from '../../services/account/types';
@@ -19,6 +20,8 @@ type Props = {
 /** Liste des prestataires et de leurs comptes, partagée par l'onboarding et le tableau de bord. */
 export function ProvidersManager({ footer }: Props) {
   const { api } = useSession();
+  /** OWNER ou ADMIN : le serveur refuse (403) l'ajout, le test et la désactivation aux autres. */
+  const manage = useCanManage();
   const loader = useCallback(() => api.listProviderAccounts(), [api]);
   const [state, retry] = useLoad(loader);
   const [accounts, setAccounts] = useState<ProviderAccount[] | null>(null);
@@ -75,6 +78,11 @@ export function ProvidersManager({ footer }: Props) {
               {t.demo.providersText}
             </p>
           )}
+          {!manage && (
+            <p className="rounded-xl bg-neutral-100 px-4 py-3 text-sm text-neutral-700">
+              {t.providers.readOnly}
+            </p>
+          )}
           <FormAlert title={t.providers.errorTitle} message={error} />
 
           {PROVIDERS.map((provider) => (
@@ -83,6 +91,7 @@ export function ProvidersManager({ footer }: Props) {
               provider={provider}
               accounts={list.filter((account) => account.provider === provider.id)}
               testingIds={testing}
+              canManage={manage}
               onCreated={(account) => {
                 upsert(account);
                 void test(account);

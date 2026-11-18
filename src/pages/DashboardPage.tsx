@@ -1,16 +1,18 @@
 import { Check, Circle } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppLayout } from '../components/account/AppLayout';
 import { EmptyDashboardState } from '../components/account/EmptyDashboardState';
 import { ToastProvider } from '../components/dashboard/Toast';
 import { TransactionsOverview } from '../components/dashboard/TransactionsOverview';
+import { PeriodSelector } from '../components/dashboard/PeriodSelector';
 import { LoadGate } from '../components/account/LoadGate';
 import { useLoad } from '../components/account/useLoad';
 import { account as t } from '../content/account.fr';
 import { usePageTitle } from '../lib/hooks/usePageTitle';
 import { ROUTES } from '../lib/session/routing';
 import { useReadySession } from '../lib/session/sessionContext';
+import type { PeriodDays } from '../services/payments/types';
 import type { AccountSnapshot } from '../services/account/types';
 
 function SetupChecklist({
@@ -83,11 +85,14 @@ export default function DashboardPage() {
   const loader = useCallback(() => api.listProviderAccounts(), [api]);
   const [state, retry] = useLoad(loader);
   const { user, organization } = snapshot;
+  const [period, setPeriod] = useState<PeriodDays>(30);
+  const hasActive =
+    state.status === 'ready' && state.data.some((account) => account.status === 'ACTIVE');
 
   return (
     <AppLayout>
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <div className="min-w-0">
           <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-neutral-950">
             {t.app.hello(user.firstName)}
           </h1>
@@ -97,13 +102,13 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
+        {hasActive && <PeriodSelector value={period} onChange={setPeriod} />}
       </div>
 
       <div className="mt-8">
         <LoadGate state={state} retry={retry}>
           {(accounts) => {
-            const hasActive = accounts.some((account) => account.status === 'ACTIVE');
-            if (!hasActive) {
+            if (!accounts.some((account) => account.status === 'ACTIVE')) {
               return (
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
                   <EmptyDashboardState />
@@ -115,7 +120,10 @@ export default function DashboardPage() {
             }
             return (
               <ToastProvider>
-                <TransactionsOverview currency={organization?.defaultCurrency ?? 'XOF'} />
+                <TransactionsOverview
+                  currency={organization?.defaultCurrency ?? 'XOF'}
+                  period={period}
+                />
               </ToastProvider>
             );
           }}

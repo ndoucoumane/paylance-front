@@ -12,6 +12,7 @@ import { toneStyles } from './dialogTones';
 import { Chip, DialogPanel, ModalDialog } from './FormDialog';
 import { PaymentPicker, SelectedPayment } from './PaymentPicker';
 import { RefundFields } from './RefundFields';
+import { useIdempotencyKey } from './useIdempotencyKey';
 import {
   emptyRefund,
   requestedAmount,
@@ -102,6 +103,7 @@ function ScheduleForm({
   const [time, setTime] = useState(() => toTime(presetDate('tomorrow')));
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const idempotency = useIdempotencyKey();
   const tone = toneStyles.sky;
 
   const when = date && time ? new Date(`${date}T${time}`) : null;
@@ -146,19 +148,23 @@ function ScheduleForm({
     setSubmitting(true);
     setError(null);
     try {
-      const schedule = await api.payments.scheduleRefund(payment.paymentId, {
+      const request = {
         amount:
           values.mode === 'partial' ? (requestedAmount(values, remaining) ?? undefined) : undefined,
         reason: values.reason.trim(),
         scheduledAt: when!.toISOString(),
+      };
+      const schedule = await api.payments.scheduleRefund(payment.paymentId, request, {
+        idempotencyKey: idempotency.keyFor({ paymentId: payment.paymentId, ...request }),
       });
-      // Solde total : le montant affiché est le solde remboursable connu à la programmation.
+      // Solde total sans montant renvoyé : solde `refundableAmount` lu sur le serveur.
       onScheduled({
         ...schedule,
         effectiveAmount: schedule.effectiveAmount ?? schedule.amount ?? remaining,
         paymentAmount: schedule.paymentAmount ?? payment.amount,
       });
     } catch (cause) {
+      idempotency.settle(cause);
       setError(errorMessage(cause));
       setSubmitting(false);
     }

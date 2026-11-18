@@ -196,6 +196,8 @@ export const account = {
       'Facultatif : vous pouvez connecter vos comptes maintenant ou plus tard, depuis votre tableau de bord.',
     dashboardTitle: 'Comptes prestataires',
     dashboardSubtitle: 'Connectez et gérez les comptes marchands que Paylance supervise.',
+    readOnly:
+      'Consultation seule : seuls les propriétaires et les administrateurs de l’organisation peuvent ajouter, tester ou désactiver un compte.',
     skip: 'Passer cette étape',
     finish: 'Terminer et accéder au tableau de bord',
     otherTitle: 'Autres prestataires',

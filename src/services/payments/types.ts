@@ -37,6 +37,12 @@ export type Payment = {
   actualPayerPhone: string | null;
   externalReference: string | null;
   failureReason: string | null;
+  /**
+   * Solde remboursable calculé par le serveur, en centimes : montant moins les remboursements
+   * aboutis **et en cours**, `0` si le paiement n'est pas remboursable. Seule source du solde
+   * et du droit de rembourser affichés par le front.
+   */
+  refundableAmount: number;
   paidAt: string | null;
   expiresAt: string | null;
   createdAt: string;
@@ -167,15 +173,22 @@ export type PaymentOverview = {
   previousDailyVolume: number[] | null;
 };
 
+/** Options des créations sensibles (voir `RequestOptions.idempotencyKey`). */
+export type MutationOptions = { idempotencyKey?: string };
+
 export interface PaymentsApi {
   overview(periodDays: PeriodDays): Promise<PaymentOverview>;
   list(query: PaymentQuery): Promise<PaymentPage>;
   get(paymentId: string): Promise<Payment>;
   history(paymentId: string): Promise<PaymentStatusChange[]>;
   refunds(paymentId: string): Promise<Refund[]>;
-  refund(paymentId: string, request: RefundRequest): Promise<Refund>;
-  create(request: PaymentCreateRequest): Promise<Payment>;
+  refund(paymentId: string, request: RefundRequest, options?: MutationOptions): Promise<Refund>;
+  create(request: PaymentCreateRequest, options?: MutationOptions): Promise<Payment>;
   scheduledRefunds(): Promise<ScheduledRefund[]>;
-  scheduleRefund(paymentId: string, request: ScheduledRefundRequest): Promise<ScheduledRefund>;
+  scheduleRefund(
+    paymentId: string,
+    request: ScheduledRefundRequest,
+    options?: MutationOptions,
+  ): Promise<ScheduledRefund>;
   cancelScheduledRefund(id: string): Promise<ScheduledRefund>;
 }

@@ -17,7 +17,15 @@ export type NavLink = {
 export type NavColumn = { title?: string; items: NavLink[] };
 
 /** Menu déroulant (`columns`) ou lien direct (`href`, sans colonnes). */
-export type NavMenu = { id: string; label: string; href?: string; columns: NavColumn[] };
+/** Encart d'accroche affiché à droite du méga-menu. */
+export type NavIntro = { title: string; text: string; cta: { label: string; href: string } };
+export type NavMenu = {
+  id: string;
+  label: string;
+  href?: string;
+  columns: NavColumn[];
+  intro?: NavIntro;
+};
 
 /** Annotation stricte des menus (vérifie chaque élément contre `NavMenu`). */
 const defineMenus = (menus: NavMenu[]): NavMenu[] => menus;
@@ -51,6 +59,11 @@ export const fr = {
       {
         id: 'produit',
         label: 'Produit',
+        intro: {
+          title: 'Une plateforme, deux opérateurs',
+          text: 'Encaissez, remboursez et rapprochez vos paiements Wave et Orange Money depuis un seul tableau de bord.',
+          cta: { label: 'Créer un compte', href: '/register' },
+        },
         columns: [
           {
             items: [
@@ -100,6 +113,11 @@ export const fr = {
       {
         id: 'ressources',
         label: 'Ressources',
+        intro: {
+          title: 'Intégrez Paylance en quelques heures',
+          text: 'Une API REST documentée, des webhooks signés et un environnement de test complet.',
+          cta: { label: 'Voir l’intégration', href: '/#developpeurs' },
+        },
         columns: [
           {
             items: [
@@ -124,6 +142,11 @@ export const fr = {
       {
         id: 'partenaires-solutions',
         label: 'Partenaires et Solutions',
+        intro: {
+          title: 'Vous êtes prestataire de paiement ?',
+          text: 'Connectez votre solution à Paylance et touchez les marchands d’Afrique de l’Ouest.',
+          cta: { label: 'Devenir partenaire', href: CONTACT_PARTNER_HREF },
+        },
         columns: [
           {
             title: 'Solutions',
@@ -162,6 +185,11 @@ export const fr = {
       {
         id: 'entreprise',
         label: 'Entreprise',
+        intro: {
+          title: 'Parlons de votre projet',
+          text: 'Notre équipe vous accompagne dans le choix de la formule et la mise en service.',
+          cta: { label: 'Nous contacter', href: '/#contact' },
+        },
         columns: [
           {
             items: [

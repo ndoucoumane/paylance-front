@@ -137,6 +137,8 @@ function generate(user: StoredUser, anchor: number): Generated[] {
     const number = paymentNumber(createdAt, 1 + chronological);
 
     const payment: Payment = {
+      // Recalculé à chaque lecture par `withRefunds`, comme le fait le serveur.
+      refundableAmount: 0,
       paymentId: id,
       paymentNumber: number,
       correlationId: null,
@@ -193,15 +195,20 @@ function refundsOf(item: Generated, state: DemoPaymentsState): Refund[] {
 /** Applique les remboursements faits dans l'interface au statut du paiement. */
 function withRefunds(item: Generated, state: DemoPaymentsState): Payment {
   const added = state.refunds[item.payment.paymentId];
-  if (!added?.length) return item.payment;
-  const refunded = refundsOf(item, state)
-    .filter((refund) => refund.status === 'SUCCESS')
-    .reduce((total, refund) => total + refund.amount, 0);
-  return {
-    ...item.payment,
-    status: refunded >= item.payment.amount ? 'REFUNDED' : 'PARTIALLY_REFUNDED',
-    updatedAt: added[0]!.createdAt,
-  };
+  const payment: Payment = added?.length
+    ? {
+        ...item.payment,
+        status:
+          refundsOf(item, state)
+            .filter((refund) => refund.status === 'SUCCESS')
+            .reduce((total, refund) => total + refund.amount, 0) >= item.payment.amount
+            ? 'REFUNDED'
+            : 'PARTIALLY_REFUNDED',
+        updatedAt: added[0]!.createdAt,
+      }
+    : item.payment;
+  // Même règle que le serveur : les remboursements en cours sont réservés.
+  return { ...payment, refundableAmount: isRefundable(payment) ? remainingOf(item, state) : 0 };
 }
 
 /** Un paiement créé dans l'interface est confirmé par le « client » une minute plus tard. */
@@ -216,7 +223,7 @@ function settle(payment: Payment, now: number): Payment {
 
 function remainingOf(item: Generated, state: DemoPaymentsState): number {
   const refunded = refundsOf(item, state)
-    .filter((refund) => refund.status === 'SUCCESS')
+    .filter((refund) => refund.status === 'SUCCESS' || refund.status === 'PENDING')
     .reduce((total, refund) => total + refund.amount, 0);
   return item.payment.amount - refunded;
 }
@@ -512,6 +519,7 @@ export const demoPaymentsApi: PaymentsApi = {
       const sequence = items.length + 1;
       const number = paymentNumber(now, sequence);
       const payment: Payment = {
+        refundableAmount: 0,
         paymentId: `pay_ui_${now.getTime().toString(36)}`,
         paymentNumber: number,
         correlationId: null,

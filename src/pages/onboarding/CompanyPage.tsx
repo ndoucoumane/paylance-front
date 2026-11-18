@@ -6,7 +6,7 @@ import { OnboardingLayout } from '../../components/account/OnboardingLayout';
 import { useLoad } from '../../components/account/useLoad';
 import { account as t } from '../../content/account.fr';
 import { usePageTitle } from '../../lib/hooks/usePageTitle';
-import { ROUTES } from '../../lib/session/routing';
+import { resumePath } from '../../lib/session/routing';
 import { useReadySession } from '../../lib/session/sessionContext';
 
 export default function CompanyPage() {
@@ -24,7 +24,7 @@ export default function CompanyPage() {
     <OnboardingLayout step="COMPANY" title={t.company.title} subtitle={t.company.subtitle}>
       <LoadGate state={state} retry={retry}>
         {(company) => (
-          <CompanyForm initial={company} onSaved={() => navigate(ROUTES.preferences)} />
+          <CompanyForm initial={company} onSaved={(next) => navigate(resumePath(next))} />
         )}
       </LoadGate>
     </OnboardingLayout>

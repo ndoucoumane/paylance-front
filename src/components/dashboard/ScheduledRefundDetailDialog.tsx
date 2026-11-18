@@ -15,6 +15,8 @@ import { ScheduleStatus } from './ScheduleStatus';
 type Props = {
   item: ScheduledRefund | null;
   cancelling: boolean;
+  /** OWNER ou ADMIN uniquement. */
+  canCancel: boolean;
   onClose: () => void;
   onCancel: (item: ScheduledRefund) => void;
 };
@@ -42,6 +44,7 @@ export function ScheduledRefundDetailDialog(props: Props) {
 function Detail({
   item,
   cancelling,
+  canCancel,
   onClose,
   onCancel,
   titleId,
@@ -91,7 +94,7 @@ function Detail({
               {item.status === 'EXECUTED' ? d.executedOn(when) : d.plannedFor(when)}
             </p>
           </div>
-          {active && (
+          {active && canCancel && (
             <Button
               variant="secondaryLight"
               onClick={() => onCancel(item)}

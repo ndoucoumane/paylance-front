@@ -12,8 +12,11 @@ export type SessionState =
 export type SessionContextValue = {
   state: SessionState;
   api: AccountApi;
-  /** Relit la session depuis le serveur (après chaque étape). */
-  refresh: () => Promise<void>;
+  /**
+   * Relit la session depuis le serveur (après chaque étape) et renvoie le nouvel état :
+   * la page suivante se déduit de cette réponse, jamais d'un enchaînement codé en dur.
+   */
+  refresh: () => Promise<SessionState>;
   logout: () => Promise<void>;
 };
 

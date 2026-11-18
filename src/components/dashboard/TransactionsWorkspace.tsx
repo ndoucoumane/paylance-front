@@ -1,6 +1,7 @@
 import { CalendarPlus, Plus, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { dashboard as t } from '../../content/dashboard.fr';
+import { useCanManage } from '../../lib/session/permissions';
 import { useSession } from '../../lib/session/sessionContext';
 import type { ProviderAccount } from '../../services/account/types';
 import type { Payment, PaymentStats, PeriodDays } from '../../services/payments/types';
@@ -25,6 +26,8 @@ type Props = {
 /** Page Transactions : historique, remboursements programmés et formulaires d'action. */
 export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
   const { api } = useSession();
+  /** OWNER ou ADMIN : seuls rôles autorisés par le serveur à encaisser et rembourser. */
+  const manage = useCanManage();
   const [section, setSection] = useState<Section>('history');
   const [period, setPeriod] = useState<PeriodDays>(30);
   const [stats, setStats] = useState<PaymentStats | null>(null);
@@ -124,21 +127,23 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
           })}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
-          <Button variant="secondaryLight" onClick={() => openSchedule()}>
-            <CalendarPlus aria-hidden="true" className="h-4 w-4 text-sky-700" />
-            <span className="sm:hidden">{t.page.schedule}</span>
-            <span className="hidden sm:inline">{t.page.scheduleLong}</span>
-          </Button>
-          <Button variant="secondaryLight" onClick={() => setPicking(true)}>
-            <RotateCcw aria-hidden="true" className="h-4 w-4 text-violet-700" />
-            {t.page.refund}
-          </Button>
-          <Button className="col-span-2" onClick={() => setPaying(true)}>
-            <Plus aria-hidden="true" className="h-4 w-4" />
-            {t.page.newPayment}
-          </Button>
-        </div>
+        {manage && (
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+            <Button variant="secondaryLight" onClick={() => openSchedule()}>
+              <CalendarPlus aria-hidden="true" className="h-4 w-4 text-sky-700" />
+              <span className="sm:hidden">{t.page.schedule}</span>
+              <span className="hidden sm:inline">{t.page.scheduleLong}</span>
+            </Button>
+            <Button variant="secondaryLight" onClick={() => setPicking(true)}>
+              <RotateCcw aria-hidden="true" className="h-4 w-4 text-violet-700" />
+              {t.page.refund}
+            </Button>
+            <Button className="col-span-2" onClick={() => setPaying(true)}>
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              {t.page.newPayment}
+            </Button>
+          </div>
+        )}
       </div>
 
       <div
@@ -155,15 +160,16 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
               currency={currency}
               version={version}
               onOpen={setDetail}
-              onRefund={setRefunding}
-              onSchedule={openSchedule}
+              onRefund={manage ? setRefunding : undefined}
+              onSchedule={manage ? openSchedule : undefined}
               onPeriodChange={setPeriod}
-              onCreate={() => setPaying(true)}
+              onCreate={manage ? () => setPaying(true) : undefined}
             />
           </>
         ) : (
           <ScheduledRefundsList
             version={version}
+            canManage={manage}
             onCreate={() => openSchedule()}
             onCount={setUpcoming}
           />
@@ -174,8 +180,8 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
         payment={detail}
         version={version}
         onClose={closeDetail}
-        onRefund={setRefunding}
-        onSchedule={openSchedule}
+        onRefund={manage ? setRefunding : undefined}
+        onSchedule={manage ? openSchedule : undefined}
       />
       <RefundPickerDialog
         open={picking}
