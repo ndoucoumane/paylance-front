@@ -26,7 +26,7 @@ export function ModalDialog({
     <dialog
       ref={ref}
       aria-labelledby={labelledBy}
-      className={`ui-dialog m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-clip rounded-2xl bg-white p-0 text-neutral-950 shadow-float ${
+      className={`ui-dialog !m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-clip rounded-2xl bg-white p-0 text-neutral-950 shadow-float ${
         size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
       }`}
     >

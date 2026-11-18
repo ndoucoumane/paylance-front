@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { fr } from '../../content/fr';
+import { LogoImage } from '../ui/Logo';
 import { formatNumber } from '../../lib/format';
 
 type Mockup = typeof fr.mockup;
@@ -139,6 +140,7 @@ function Sidebar() {
   const { mockup } = fr;
   return (
     <div className="hidden w-52 shrink-0 flex-col border-r border-neutral-200 bg-white p-3 md:flex">
+      <LogoImage size="sm" className="mb-3 px-2 pt-1" />
       <div className="flex items-center gap-2.5 rounded-lg p-2">
         <span className="flex h-8 w-8 items-center justify-center rounded-md bg-neutral-950 text-[0.6875rem] font-semibold text-white">
           BT

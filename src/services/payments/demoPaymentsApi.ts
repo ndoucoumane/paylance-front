@@ -539,16 +539,29 @@ export const demoPaymentsApi: PaymentsApi = {
 
   async scheduledRefunds() {
     await wait(200);
-    return dataset((_items, state) =>
-      [...(state.scheduled ?? [])].sort((a, b) => {
-        // Prochaines échéances d'abord, puis l'historique du plus récent au plus ancien.
-        const pendingA = a.status === 'SCHEDULED' ? 0 : 1;
-        const pendingB = b.status === 'SCHEDULED' ? 0 : 1;
-        if (pendingA !== pendingB) return pendingA - pendingB;
-        return pendingA === 0
-          ? a.scheduledAt.localeCompare(b.scheduledAt)
-          : b.scheduledAt.localeCompare(a.scheduledAt);
-      }),
+    return dataset((items, state) =>
+      (state.scheduled ?? [])
+        .map((schedule): ScheduledRefund => {
+          const item = items.find((entry) => entry.payment.paymentId === schedule.paymentId);
+          if (!item) return { ...schedule };
+          const executed = schedule.refundId
+            ? refundsOf(item, state).find((refund) => refund.refundId === schedule.refundId)
+            : undefined;
+          const effectiveAmount = executed
+            ? executed.amount
+            : (schedule.amount ??
+              (schedule.status === 'SCHEDULED' ? remainingOf(item, state) : null));
+          return { ...schedule, effectiveAmount, paymentAmount: item.payment.amount };
+        })
+        .sort((a, b) => {
+          // Prochaines échéances d'abord, puis l'historique du plus récent au plus ancien.
+          const pendingA = a.status === 'SCHEDULED' ? 0 : 1;
+          const pendingB = b.status === 'SCHEDULED' ? 0 : 1;
+          if (pendingA !== pendingB) return pendingA - pendingB;
+          return pendingA === 0
+            ? a.scheduledAt.localeCompare(b.scheduledAt)
+            : b.scheduledAt.localeCompare(a.scheduledAt);
+        }),
     );
   },
 

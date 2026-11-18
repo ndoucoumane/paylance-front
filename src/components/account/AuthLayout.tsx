@@ -1,7 +1,7 @@
 import { ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { account as t } from '../../content/account.fr';
-import { Logo } from '../ui/Logo';
+import { Logo, LogoMark } from '../ui/Logo';
 import { DemoBanner } from './DemoBanner';
 
 type Props = {
@@ -47,6 +47,7 @@ export function AuthLayout({ title, subtitle, topLink, children }: Props) {
 
         <aside className="hidden border-l border-neutral-200 bg-surface lg:flex lg:flex-col lg:justify-center lg:px-14 xl:px-20">
           <div className="max-w-md">
+            <LogoMark size="lg" className="mb-8" />
             <p className="text-sm font-medium text-neutral-500">{t.aside.eyebrow}</p>
             <p className="mt-4 text-[2.5rem] font-semibold leading-[1.05] tracking-[-0.04em] text-neutral-950">
               {t.aside.title}

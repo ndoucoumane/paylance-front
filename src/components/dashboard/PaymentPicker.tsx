@@ -82,7 +82,7 @@ export function PaymentPicker({ value, onChange, tone = 'violet', error }: Props
       <fieldset
         id={`${id}-liste`}
         aria-describedby={error ? `${id}-erreur` : `${id}-aide`}
-        className={`mt-3 max-h-72 overflow-y-auto rounded-xl ring-1 ${
+        className={`mt-3 h-72 min-w-0 overflow-y-auto rounded-xl ring-1 ${
           error ? 'ring-red-600' : 'ring-neutral-200'
         }`}
       >
@@ -121,7 +121,7 @@ export function PaymentPicker({ value, onChange, tone = 'violet', error }: Props
                     />
                     <ProviderMark provider={payment.provider} />
                     <span className="min-w-0 flex-1">
-                      <span className="block font-mono text-[0.8125rem] font-medium text-neutral-950">
+                      <span className="block truncate font-mono text-[0.8125rem] font-medium text-neutral-950">
                         {payment.paymentNumber}
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-neutral-500">

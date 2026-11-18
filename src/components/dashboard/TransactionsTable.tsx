@@ -38,6 +38,7 @@ import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 import { selectClass } from '../ui/form/Field';
 import { ActionMenu, type MenuAction } from './ActionMenu';
+import { CopyButton } from './CopyButton';
 import { EmptyState } from './EmptyState';
 import { PeriodSelector } from './PeriodSelector';
 import { ProviderMark } from './ProviderMark';
@@ -532,17 +533,24 @@ export function TransactionsTable({
                           <ProviderMark provider={payment.provider} />
                         </span>
                         <div>
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onOpen(payment);
-                            }}
-                            aria-label={t.table.openDetail(payment.paymentNumber)}
-                            className="rounded font-mono text-[0.8125rem] font-medium text-neutral-950 underline-offset-4 group-hover:underline"
-                          >
-                            {payment.paymentNumber}
-                          </button>
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onOpen(payment);
+                              }}
+                              aria-label={t.table.openDetail(payment.paymentNumber)}
+                              className="whitespace-nowrap rounded font-mono text-[0.8125rem] font-medium text-neutral-950 underline-offset-4 group-hover:underline"
+                            >
+                              {payment.paymentNumber}
+                            </button>
+                            <CopyButton
+                              value={payment.paymentNumber}
+                              label={t.actions.copyNumber}
+                              className="h-6 w-6"
+                            />
+                          </div>
                           <p className="mt-0.5 text-xs text-neutral-500">
                             {formatShortDateTime(payment.createdAt)}
                           </p>

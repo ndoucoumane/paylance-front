@@ -31,7 +31,7 @@ const r = t.refund;
 export function RefundDialog({ payment, onClose, onRefunded }: Props) {
   const titleId = useId();
   return (
-    <ModalDialog open={Boolean(payment)} onClose={onClose} labelledBy={titleId}>
+    <ModalDialog open={Boolean(payment)} onClose={onClose} labelledBy={titleId} size="lg">
       {payment && (
         <RefundForm titleId={titleId} payment={payment} onClose={onClose} onRefunded={onRefunded} />
       )}

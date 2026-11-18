@@ -108,6 +108,13 @@ export type ScheduledRefund = {
   payerPhone: string | null;
   /** En centimes ; `null` = solde remboursable au moment de l'exécution. */
   amount: number | null;
+  /**
+   * Montant effectif en centimes : remboursé si exécuté, sinon solde remboursable actuel
+   * (estimation affichée pour un « solde total »). Absent si le serveur ne le calcule pas.
+   */
+  effectiveAmount?: number | null;
+  /** Montant initial du paiement, en centimes. */
+  paymentAmount?: number;
   currency: string;
   reason: string;
   scheduledAt: string;

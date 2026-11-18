@@ -25,7 +25,7 @@ export function SessionStatusScreen() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-neutral-50 px-4 py-12">
-      <Logo tone="light" />
+      <Logo tone="light" size="lg" />
       <div className="w-full max-w-md rounded-2xl bg-white p-6 ring-1 ring-neutral-200 sm:p-8">
         {state.status === 'error' ? (
           <div className="space-y-5">

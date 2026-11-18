@@ -46,7 +46,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-4">
-            <Logo tone="light" />
+            <Logo tone="light" compact to={ROUTES.dashboard} />
             {organization && (
               <>
                 <span aria-hidden="true" className="hidden h-6 w-px bg-neutral-200 sm:block" />

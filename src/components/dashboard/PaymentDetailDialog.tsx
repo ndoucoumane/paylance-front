@@ -1,4 +1,4 @@
-import { CalendarClock, Check, Copy, RotateCcw, X } from 'lucide-react';
+import { CalendarClock, RotateCcw, X } from 'lucide-react';
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { dashboard as t } from '../../content/dashboard.fr';
 import {
@@ -13,12 +13,12 @@ import { isRefundable } from '../../services/payments/rules';
 import type { Payment, PaymentStatusChange, Refund } from '../../services/payments/types';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
+import { CopyButton } from './CopyButton';
 import { ModalDialog } from './FormDialog';
 import { ProviderMark } from './ProviderMark';
 import { providerNames } from './providers';
 import { StatusBadge } from './StatusBadge';
 import { statusBarColor } from './statusColors';
-import { useToast } from './toastContext';
 
 type Props = {
   payment: Payment | null;
@@ -47,7 +47,7 @@ export function PaymentDetailDialog(props: Props) {
   );
 }
 
-function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
+export function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
   return (
     <h3
       id={id}
@@ -58,42 +58,20 @@ function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
   );
 }
 
-function Item({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
+export function Item({
+  label,
+  children,
+  wide,
+}: {
+  label: string;
+  children: ReactNode;
+  wide?: boolean;
+}) {
   return (
     <div className={wide ? 'sm:col-span-2' : undefined}>
       <dt className="text-xs text-neutral-500">{label}</dt>
       <dd className="mt-1 break-words text-sm font-medium text-neutral-900">{children}</dd>
     </div>
-  );
-}
-
-/** Bouton de copie discret, avec retour visuel. */
-function CopyButton({ value, label }: { value: string; label: string }) {
-  const toast = useToast();
-  const [done, setDone] = useState(false);
-  useEffect(() => {
-    if (!done) return;
-    const timer = window.setTimeout(() => setDone(false), 1_500);
-    return () => window.clearTimeout(timer);
-  }, [done]);
-  return (
-    <button
-      type="button"
-      onClick={() =>
-        void navigator.clipboard?.writeText(value).then(() => {
-          setDone(true);
-          toast(t.actions.copied);
-        })
-      }
-      aria-label={label}
-      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
-    >
-      {done ? (
-        <Check aria-hidden="true" className="h-3.5 w-3.5 text-emerald-600" />
-      ) : (
-        <Copy aria-hidden="true" className="h-3.5 w-3.5" />
-      )}
-    </button>
   );
 }
 
