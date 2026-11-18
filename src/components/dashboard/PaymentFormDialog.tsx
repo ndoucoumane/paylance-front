@@ -1,4 +1,4 @@
-import { Check, CircleCheck, Copy, Smartphone } from 'lucide-react';
+import { Check, Smartphone } from 'lucide-react';
 import { useId, useState, type FormEvent } from 'react';
 import { dashboard as t } from '../../content/dashboard.fr';
 import { currencyLabel, formatMoney, formatNumber, formatPhone } from '../../lib/format';
@@ -14,8 +14,6 @@ import { toneStyles } from './dialogTones';
 import { Chip, DialogPanel, ModalDialog } from './FormDialog';
 import { ProviderMark } from './ProviderMark';
 import { providerNames } from './providers';
-import { StatusBadge } from './StatusBadge';
-import { useToast } from './toastContext';
 
 type Props = {
   open: boolean;
@@ -25,8 +23,8 @@ type Props = {
   /** Indicatif du pays de l'entreprise, ex. +221. */
   dialCode: string;
   onClose: () => void;
+  /** Appelé après création : la page ferme le formulaire et affiche la confirmation. */
   onCreated: (payment: Payment) => void;
-  onView: (payment: Payment) => void;
 };
 
 const p = t.payment;
@@ -53,7 +51,7 @@ function groupPhone(digits: string): string {
 export function PaymentFormDialog(props: Props) {
   const titleId = useId();
   return (
-    <ModalDialog open={props.open} onClose={props.onClose} labelledBy={titleId}>
+    <ModalDialog open={props.open} onClose={props.onClose} labelledBy={titleId} size="lg">
       <PaymentForm titleId={titleId} {...props} />
     </ModalDialog>
   );
@@ -68,10 +66,8 @@ function PaymentForm({
   dialCode,
   onClose,
   onCreated,
-  onView,
 }: Props & { titleId: string }) {
   const { api } = useSession();
-  const toast = useToast();
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState(accounts.length === 1 ? accounts[0]!.id : '');
   const [phone, setPhone] = useState('');
@@ -81,7 +77,6 @@ function PaymentForm({
   const [errors, setErrors] = useState<Errors>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [created, setCreated] = useState<Payment | null>(null);
   const tone = toneStyles.emerald;
 
   const value = Number(amount) || 0;
@@ -92,16 +87,6 @@ function PaymentForm({
   const money = (units: number) => formatMoney(units * 100, currency);
 
   const clear = (key: keyof Errors) => setErrors((current) => ({ ...current, [key]: undefined }));
-
-  const reset = () => {
-    setCreated(null);
-    setAmount('');
-    setPhone('');
-    setReference('');
-    setDescription('');
-    setErrors({});
-    setError(null);
-  };
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -131,7 +116,6 @@ function PaymentForm({
         description: description.trim() || undefined,
         expiresInMinutes: expiry,
       });
-      setCreated(payment);
       onCreated(payment);
     } catch (cause) {
       setError(errorMessage(cause));
@@ -139,63 +123,6 @@ function PaymentForm({
       setSubmitting(false);
     }
   };
-
-  if (created) {
-    return (
-      <DialogPanel
-        titleId={titleId}
-        tone="emerald"
-        icon={Smartphone}
-        title={p.title}
-        onClose={onClose}
-        footer={
-          <>
-            <Button variant="secondaryLight" onClick={reset}>
-              {p.another}
-            </Button>
-            <Button variant="secondaryLight" onClick={() => onView(created)}>
-              {p.viewDetail}
-            </Button>
-            <Button size="lg" onClick={onClose}>
-              {p.done}
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col items-center py-4 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 ring-8 ring-emerald-50/50">
-            <CircleCheck aria-hidden="true" className="h-7 w-7" />
-          </span>
-          <p role="status" className="mt-5 text-lg font-semibold">
-            {p.successTitle}
-          </p>
-          <p className="mt-1 max-w-sm text-sm text-neutral-500">{p.successText}</p>
-          <p className="mt-6 text-4xl font-semibold tabular-nums tracking-tight">
-            {formatMoney(created.amount, created.currency)}
-          </p>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            <StatusBadge status={created.status} />
-            <span className="text-sm text-neutral-500">
-              {providerNames[created.provider]} · {formatPhone(created.payerPhone)}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              void navigator.clipboard
-                ?.writeText(created.paymentNumber)
-                .then(() => toast(t.actions.copied))
-            }
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-neutral-50 px-3 py-2 font-mono text-[0.8125rem] font-medium text-neutral-900 ring-1 ring-neutral-200 hover:bg-neutral-100"
-          >
-            {created.paymentNumber}
-            <Copy aria-hidden="true" className="h-3.5 w-3.5 text-neutral-500" />
-            <span className="sr-only">{t.actions.copyNumber}</span>
-          </button>
-        </div>
-      </DialogPanel>
-    );
-  }
 
   return (
     <DialogPanel

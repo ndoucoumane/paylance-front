@@ -152,7 +152,12 @@ function ScheduleForm({
         reason: values.reason.trim(),
         scheduledAt: when!.toISOString(),
       });
-      onScheduled(schedule);
+      // Solde total : le montant affiché est le solde remboursable connu à la programmation.
+      onScheduled({
+        ...schedule,
+        effectiveAmount: schedule.effectiveAmount ?? schedule.amount ?? remaining,
+        paymentAmount: schedule.paymentAmount ?? payment.amount,
+      });
     } catch (cause) {
       setError(errorMessage(cause));
       setSubmitting(false);

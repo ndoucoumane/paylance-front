@@ -17,7 +17,7 @@ type Props = {
 export function RefundPickerDialog({ open, onClose, onPick }: Props) {
   const titleId = useId();
   return (
-    <ModalDialog open={open} onClose={onClose} labelledBy={titleId}>
+    <ModalDialog open={open} onClose={onClose} labelledBy={titleId} size="lg">
       <PickerStep titleId={titleId} onClose={onClose} onPick={onPick} />
     </ModalDialog>
   );

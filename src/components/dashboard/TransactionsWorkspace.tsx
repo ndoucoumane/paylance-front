@@ -5,14 +5,13 @@ import { useSession } from '../../lib/session/sessionContext';
 import type { ProviderAccount } from '../../services/account/types';
 import type { Payment, PaymentStats, PeriodDays } from '../../services/payments/types';
 import { Button } from '../ui/Button';
-import { PaymentDrawer } from './PaymentDrawer';
+import { PaymentDetailDialog } from './PaymentDetailDialog';
 import { PaymentFormDialog } from './PaymentFormDialog';
-import { PeriodSelector } from './PeriodSelector';
 import { RefundDialog } from './RefundDialog';
 import { RefundPickerDialog } from './RefundPickerDialog';
 import { ScheduledRefundsList } from './ScheduledRefundsList';
 import { ScheduleRefundDialog } from './ScheduleRefundDialog';
-import { useToast } from './toastContext';
+import { SuccessDialog, type SuccessInfo } from './SuccessDialog';
 import { TransactionsTable } from './TransactionsTable';
 
 type Section = 'history' | 'scheduled';
@@ -26,7 +25,6 @@ type Props = {
 /** Page Transactions : historique, remboursements programmés et formulaires d'action. */
 export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
   const { api } = useSession();
-  const toast = useToast();
   const [section, setSection] = useState<Section>('history');
   const [period, setPeriod] = useState<PeriodDays>(30);
   const [stats, setStats] = useState<PaymentStats | null>(null);
@@ -39,6 +37,7 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
   const [picking, setPicking] = useState(false);
   const [paying, setPaying] = useState(false);
   const [scheduling, setScheduling] = useState<{ payment: Payment | null } | null>(null);
+  const [success, setSuccess] = useState<SuccessInfo | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,6 +68,7 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
   const closePicker = useCallback(() => setPicking(false), []);
   const closePayment = useCallback(() => setPaying(false), []);
   const closeSchedule = useCallback(() => setScheduling(null), []);
+  const closeSuccess = useCallback(() => setSuccess(null), []);
   const openSchedule = useCallback(
     (payment: Payment | null = null) => setScheduling({ payment }),
     [],
@@ -149,7 +149,6 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
       >
         {section === 'history' ? (
           <>
-            <PeriodSelector value={period} onChange={setPeriod} />
             <TransactionsTable
               periodDays={period}
               stats={stats}
@@ -158,6 +157,8 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
               onOpen={setDetail}
               onRefund={setRefunding}
               onSchedule={openSchedule}
+              onPeriodChange={setPeriod}
+              onCreate={() => setPaying(true)}
             />
           </>
         ) : (
@@ -169,11 +170,12 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
         )}
       </div>
 
-      <PaymentDrawer
+      <PaymentDetailDialog
         payment={detail}
         version={version}
         onClose={closeDetail}
         onRefund={setRefunding}
+        onSchedule={openSchedule}
       />
       <RefundPickerDialog
         open={picking}
@@ -187,9 +189,9 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
         payment={refunding}
         onClose={closeRefund}
         onRefunded={(refund) => {
+          if (refunding) setSuccess({ kind: 'refund', refund, payment: refunding });
           setRefunding(null);
           refresh();
-          toast(t.refund.success);
           // Le tiroir ouvert affiche l'état réel du paiement après remboursement.
           if (detail?.paymentId === refund.paymentId) {
             api.payments.get(refund.paymentId).then(setDetail, () => undefined);
@@ -200,11 +202,11 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
         open={scheduling !== null}
         payment={scheduling?.payment ?? null}
         onClose={closeSchedule}
-        onScheduled={() => {
+        onScheduled={(schedule) => {
           setScheduling(null);
           refresh();
           setSection('scheduled');
-          toast(t.schedule.success);
+          setSuccess({ kind: 'schedule', schedule });
         }}
       />
       <PaymentFormDialog
@@ -213,13 +215,25 @@ export function TransactionsWorkspace({ accounts, currency, dialCode }: Props) {
         currency={currency}
         dialCode={dialCode}
         onClose={closePayment}
-        onCreated={() => {
+        onCreated={(payment) => {
+          setPaying(false);
           setSection('history');
           refresh();
+          setSuccess({ kind: 'payment', payment });
         }}
+      />
+      <SuccessDialog
+        info={success}
+        onClose={closeSuccess}
         onView={(payment) => {
-          setPaying(false);
-          setDetail(payment);
+          setSuccess(null);
+          // Données fraîches : le paiement a pu changer de statut depuis la confirmation.
+          api.payments.get(payment.paymentId).then(setDetail, () => setDetail(payment));
+        }}
+        onAgain={(kind) => {
+          setSuccess(null);
+          if (kind === 'payment') setPaying(true);
+          else openSchedule();
         }}
       />
     </div>

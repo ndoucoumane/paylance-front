@@ -1,3 +1,4 @@
+import { formatNumber } from '../lib/format';
 import type { PaymentStatus } from '../services/payments/types';
 
 /** Textes de la vue d'ensemble (transactions), en français. */
@@ -25,6 +26,12 @@ export const dashboard = {
     unavailable:
       'La courbe quotidienne sera disponible lorsque le serveur exposera une série par jour.',
     tooltipCount: (count: number) => `${count} transaction${count > 1 ? 's' : ''}`,
+    legendCurrent: 'Cette période',
+    legendPrevious: 'Période précédente',
+    tooltipPrevious: (amount: string) => `Préc. : ${amount}`,
+    trend: (percent: string) => `${percent} vs période précédente`,
+    emptyTitle: 'Aucun encaissement sur la période',
+    emptyText: 'La courbe se dessinera dès votre premier paiement réussi.',
   },
 
   breakdown: {
@@ -37,7 +44,7 @@ export const dashboard = {
   table: {
     title: 'Transactions',
     subtitle: (count: number) =>
-      `${new Intl.NumberFormat('fr-FR').format(count)} transaction${count > 1 ? 's' : ''} sur la période`,
+      `${formatNumber(count)} transaction${count > 1 ? 's' : ''} sur la période`,
     search: 'N° de transaction, téléphone, référence',
     searchLabel: 'Rechercher une transaction',
     providerAll: 'Tous les opérateurs',
@@ -64,11 +71,23 @@ export const dashboard = {
     emptyFiltered: 'Aucune transaction ne correspond à ces filtres.',
     emptyPeriod: 'Aucune transaction sur cette période.',
     resetFilters: 'Effacer les filtres',
-    range: (from: number, to: number, total: number) =>
-      `${from}–${to} sur ${new Intl.NumberFormat('fr-FR').format(total)}`,
+    range: (from: number, to: number, total: number) => `${from}–${to} sur ${formatNumber(total)}`,
     previous: 'Page précédente',
     next: 'Page suivante',
     openDetail: (number: string) => `Voir le détail de la transaction ${number}`,
+    sortLabel: 'Trier',
+    sorts: {
+      'createdAt-desc': 'Plus récentes',
+      'createdAt-asc': 'Plus anciennes',
+      'amount-desc': 'Montant décroissant',
+      'amount-asc': 'Montant croissant',
+    },
+    date: 'Date',
+    emptyNewTitle: 'Vos transactions apparaîtront ici',
+    emptyNewText:
+      'Envoyez une première demande de paiement à un client : vous suivrez ici son statut en temps réel.',
+    emptyNewCta: 'Créer un paiement',
+    emptySearchTitle: 'Aucun résultat',
   },
 
   actions: {
@@ -109,7 +128,19 @@ export const dashboard = {
       MANUAL: 'Action manuelle',
     } as Record<string, string>,
     refund: 'Rembourser',
+    schedule: 'Programmer',
     refundable: (amount: string) => `${amount} remboursable`,
+    eyebrow: 'Transaction',
+    copy: 'Copier',
+    copyId: 'Copier l’identifiant technique',
+    via: (provider: string, phone: string) => `via ${provider} · ${phone}`,
+    sections: { payment: 'Paiement', customer: 'Client', technical: 'Référence technique' },
+    fields2: {
+      expiresAt: 'Expire le',
+      actualPayer: 'Payé depuis le',
+      none: '—',
+    },
+    totals: { collected: 'Encaissé', refunded: 'Remboursé', net: 'Net' },
   },
 
   refund: {
@@ -130,7 +161,6 @@ export const dashboard = {
       'Le remboursement est exécuté depuis votre compte marchand et ne peut pas être annulé.',
     cancel: 'Annuler',
     submit: (amount: string) => `Rembourser ${amount}`,
-    success: 'Remboursement effectué',
     errorTitle: 'Remboursement impossible',
   },
 
@@ -155,7 +185,7 @@ export const dashboard = {
 
   page: {
     title: 'Transactions',
-    subtitle: 'Encaissez, suivez et remboursez vos paiements Wave et Orange Money.',
+    subtitle: 'Encaissez, suivez et remboursez vos paiements',
     newPayment: 'Nouveau paiement',
     refund: 'Rembourser',
     schedule: 'Programmer',
@@ -189,11 +219,6 @@ export const dashboard = {
     cancel: 'Annuler',
     submit: (amount: string) => (amount ? `Demander ${amount}` : 'Demander le paiement'),
     errorTitle: 'Paiement impossible',
-    successTitle: 'Demande de paiement envoyée',
-    successText: 'Le statut passera à « Réussi » dès que le client aura validé.',
-    viewDetail: 'Voir le détail',
-    another: 'Nouveau paiement',
-    done: 'Terminer',
     test: 'Test',
   },
 
@@ -232,8 +257,49 @@ export const dashboard = {
     info: 'Le solde remboursable est vérifié au moment de l’exécution. Si le paiement a été remboursé entre-temps, la programmation échoue sans débit.',
     cancel: 'Annuler',
     submit: 'Programmer le remboursement',
-    success: 'Remboursement programmé',
     errorTitle: 'Programmation impossible',
+  },
+
+  /** Fenêtre de confirmation après un paiement, un remboursement ou une programmation. */
+  success: {
+    close: 'Fermer',
+    done: 'Terminer',
+    copyNumber: 'Copier le numéro de transaction',
+    fields: {
+      transaction: 'Transaction',
+      provider: 'Opérateur',
+      customer: 'Client',
+      reference: 'Référence',
+      expiresAt: 'Expire le',
+      reason: 'Motif',
+      createdAt: 'Effectué le',
+      scheduledAt: 'Exécution prévue',
+      author: 'Par',
+      mode: 'Type',
+      status: 'Statut',
+    },
+    payment: {
+      title: 'Paiement créé avec succès',
+      text: 'La demande a été envoyée sur le téléphone du client. Le statut passera à « Réussi » dès qu’il l’aura validée.',
+      view: 'Voir le détail',
+      another: 'Nouveau paiement',
+    },
+    refund: {
+      title: 'Remboursement effectué avec succès',
+      pendingTitle: 'Remboursement envoyé avec succès',
+      text: 'Le montant a été renvoyé au client depuis votre compte marchand.',
+      pendingText:
+        'L’opérateur traite le remboursement ; son statut se mettra à jour automatiquement.',
+      view: 'Voir la transaction',
+    },
+    schedule: {
+      title: 'Remboursement programmé avec succès',
+      text: 'Il sera exécuté automatiquement à la date prévue. Vous pouvez l’annuler jusque-là.',
+      fullAmount: 'Solde total',
+      fullMode: 'Solde total remboursable',
+      partialMode: 'Remboursement partiel',
+      another: 'Programmer un autre',
+    },
   },
 
   /** Liste des remboursements programmés. */
@@ -245,12 +311,70 @@ export const dashboard = {
     emptyText:
       'Planifiez un remboursement pour l’exécuter plus tard, par exemple après un retour de marchandise.',
     full: 'Solde total',
+    fullEstimated: 'Solde total · estimé',
+    partialOf: (amount: string) => `Partiel · sur ${amount}`,
+    columns: {
+      when: 'Exécution',
+      transaction: 'Transaction',
+      provider: 'Opérateur',
+      amount: 'Montant',
+      status: 'Statut',
+      author: 'Programmé par',
+      actions: 'Action',
+    },
+    at: (time: string) => `à ${time}`,
+    createdOn: (date: string) => `le ${date}`,
+    unknownAuthor: '—',
     by: (who: string) => `par ${who}`,
     cancel: 'Annuler',
     cancelLabel: (number: string) => `Annuler le remboursement programmé de ${number}`,
     cancelConfirm: (number: string) =>
       `Annuler le remboursement programmé de la transaction ${number} ?`,
     cancelled: 'Programmation annulée',
+    copyNumber: (number: string) => `Copier le numéro ${number}`,
+    menuLabel: (number: string) => `Actions pour le remboursement programmé de ${number}`,
+    view: 'Voir le détail',
+    openDetail: (number: string) => `Voir le détail du remboursement programmé de ${number}`,
+    cancelUnavailable: 'Seul un remboursement encore programmé peut être annulé',
+    detail: {
+      eyebrow: 'Remboursement programmé',
+      cancel: 'Annuler la programmation',
+      plannedFor: (date: string) => `Exécution prévue le ${date}`,
+      executedOn: (date: string) => `Exécuté le ${date}`,
+      sections: {
+        refund: 'Remboursement',
+        payment: 'Transaction d’origine',
+        technical: 'Références techniques',
+      },
+      fields: {
+        scheduledAt: 'Date d’exécution',
+        mode: 'Type',
+        modeFull: 'Solde total remboursable',
+        modePartial: 'Remboursement partiel',
+        reason: 'Motif',
+        author: 'Programmé par',
+        createdAt: 'Programmé le',
+        paymentNumber: 'N° de transaction',
+        paymentAmount: 'Montant du paiement',
+        provider: 'Opérateur',
+        phone: 'Téléphone du client',
+        failure: 'Motif de l’échec',
+        id: 'Identifiant de la programmation',
+        refundId: 'Identifiant du remboursement',
+        paymentId: 'Identifiant du paiement',
+      },
+      copyId: 'Copier l’identifiant',
+      estimatedNote:
+        'Montant estimé : le solde remboursable est recalculé au moment de l’exécution.',
+      timeline: 'Chronologie',
+      steps: {
+        created: 'Programmation créée',
+        upcoming: 'Exécution à venir',
+        EXECUTED: 'Remboursement exécuté',
+        CANCELLED: 'Programmation annulée',
+        FAILED: 'Exécution échouée',
+      },
+    },
     statuses: {
       SCHEDULED: 'Programmé',
       EXECUTED: 'Exécuté',

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { account as t } from '../../content/account.fr';
 import type { ProviderDefinition } from '../../services/account/referenceData';
 import type { ProviderAccount, ProviderAccountStatus } from '../../services/account/types';
+import { ProviderMark } from '../dashboard/ProviderMark';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { ProviderAccountForm } from './ProviderAccountForm';
@@ -134,11 +135,6 @@ export function ProviderConnectionCard({
   onDisable,
 }: Props) {
   const [adding, setAdding] = useState(false);
-  const initials = provider.name
-    .split(' ')
-    .map((word) => word[0])
-    .join('')
-    .slice(0, 2);
 
   return (
     <section
@@ -146,12 +142,7 @@ export function ProviderConnectionCard({
       className="rounded-2xl bg-white p-5 ring-1 ring-neutral-200 sm:p-6"
     >
       <header className="flex items-start gap-4">
-        <span
-          aria-hidden="true"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-950 text-sm font-semibold text-white"
-        >
-          {initials}
-        </span>
+        <ProviderMark provider={provider.id} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3">
             <h2

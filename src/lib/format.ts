@@ -1,8 +1,15 @@
 const numberFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 
-/** 18450000 → « 18 450 000 » (espaces insécables fines). */
+/**
+ * Intl sépare les milliers par une espace fine insécable (U+202F). Plusieurs polices, dont
+ * Plus Jakarta Sans, la dessinent quasi nulle : « 120500FCFA ». On la remplace par une
+ * espace insécable classique (U+00A0), toujours visible et qui ne coupe pas le montant.
+ */
+const readable = (value: string) => value.replace(/\u202f/g, '\u00a0');
+
+/** 18450000 → « 18 450 000 » (espaces insécables). */
 export function formatNumber(value: number): string {
-  return numberFormat.format(value);
+  return readable(numberFormat.format(value));
 }
 
 /** 25000 → « 25 000 FCFA ». */
@@ -23,7 +30,7 @@ export function formatMoney(cents: number, currency = 'XOF'): string {
     });
     moneyFormats.set(currency, format);
   }
-  return format.format(cents / 100);
+  return readable(format.format(cents / 100));
 }
 
 /** Montant sans devise, pour les colonnes alignées : « 25 000 ». */
@@ -68,6 +75,9 @@ export function formatPercent(ratio: number, signed = false): string {
     maximumFractionDigits: 1,
     minimumFractionDigits: 1,
   }).format(Math.abs(ratio) * 100);
-  const sign = signed ? (ratio > 0 ? '+' : ratio < 0 ? '−' : '') : ratio < 0 ? '−' : '';
-  return `${sign}${value} %`;
+  return readable(`${sign(ratio, signed)}${value}\u00a0%`);
+}
+
+function sign(ratio: number, signed: boolean): string {
+  return signed ? (ratio > 0 ? '+' : ratio < 0 ? '−' : '') : ratio < 0 ? '−' : '';
 }

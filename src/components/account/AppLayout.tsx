@@ -1,7 +1,8 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Moon, Sun } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { account as t } from '../../content/account.fr';
+import { useTheme } from '../../lib/hooks/useTheme';
 import { ROUTES } from '../../lib/session/routing';
 import { useReadySession } from '../../lib/session/sessionContext';
 import { Button } from '../ui/Button';
@@ -9,10 +10,15 @@ import { Logo } from '../ui/Logo';
 import { Spinner } from '../ui/Spinner';
 import { DemoBanner } from './DemoBanner';
 
-const NAV = [
+const NAV: { to: string; label: string; short?: string; end: boolean }[] = [
   { to: ROUTES.dashboard, label: t.app.nav.overview, end: true },
   { to: ROUTES.dashboardTransactions, label: t.app.nav.transactions, end: false },
-  { to: ROUTES.dashboardProviders, label: t.app.nav.providers, end: false },
+  {
+    to: ROUTES.dashboardProviders,
+    label: t.app.nav.providers,
+    short: t.app.nav.providersShort,
+    end: false,
+  },
 ];
 
 /** Mise en page de l'espace professionnel. */
@@ -20,6 +26,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { snapshot, logout } = useReadySession();
   const navigate = useNavigate();
   const [leaving, setLeaving] = useState(false);
+  const { theme, toggle } = useTheme();
   const { user, organization } = snapshot;
   const initials = `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase() || '?';
 
@@ -39,7 +46,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-4">
-            <Logo tone="light" />
+            <Logo tone="light" compact to={ROUTES.dashboard} />
             {organization && (
               <>
                 <span aria-hidden="true" className="hidden h-6 w-px bg-neutral-200 sm:block" />
@@ -62,6 +69,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
             >
               {initials}
             </span>
+            <Button
+              variant="ghostLight"
+              onClick={toggle}
+              aria-label={theme === 'dark' ? t.app.theme.light : t.app.theme.dark}
+              title={theme === 'dark' ? t.app.theme.light : t.app.theme.dark}
+            >
+              {theme === 'dark' ? (
+                <Sun aria-hidden="true" className="h-4 w-4" />
+              ) : (
+                <Moon aria-hidden="true" className="h-4 w-4" />
+              )}
+            </Button>
             <Button
               variant="ghostLight"
               onClick={onLogout}
@@ -87,7 +106,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     }`
                   }
                 >
-                  {item.label}
+                  {item.short ? (
+                    <>
+                      <span className="sm:hidden">{item.short}</span>
+                      <span className="hidden sm:inline">{item.label}</span>
+                    </>
+                  ) : (
+                    item.label
+                  )}
                 </NavLink>
               </li>
             ))}

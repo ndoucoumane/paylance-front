@@ -108,6 +108,13 @@ export type ScheduledRefund = {
   payerPhone: string | null;
   /** En centimes ; `null` = solde remboursable au moment de l'exécution. */
   amount: number | null;
+  /**
+   * Montant effectif en centimes : remboursé si exécuté, sinon solde remboursable actuel
+   * (estimation affichée pour un « solde total »). Absent si le serveur ne le calcule pas.
+   */
+  effectiveAmount?: number | null;
+  /** Montant initial du paiement, en centimes. */
+  paymentAmount?: number;
   currency: string;
   reason: string;
   scheduledAt: string;
@@ -125,12 +132,18 @@ export type ScheduledRefundRequest = RefundRequest & { scheduledAt: string };
 
 export type PeriodDays = 7 | 30 | 90;
 
+/** Tri de la liste : champ et sens. */
+export type PaymentSortField = 'createdAt' | 'amount';
+export type PaymentSort = { field: PaymentSortField; direction: 'asc' | 'desc' };
+
 export type PaymentQuery = {
   periodDays: PeriodDays;
   status?: PaymentStatus;
   provider?: PaymentProvider;
   /** Numéro de transaction, téléphone ou référence. */
   q?: string;
+  /** Par défaut : date décroissante. */
+  sort?: PaymentSort;
   /** Page commençant à 0. */
   page: number;
   size: number;
@@ -150,6 +163,8 @@ export type PaymentOverview = {
   /** Volume encaissé par jour (centimes), si disponible. */
   dailyVolume: number[] | null;
   dailyCount: number[] | null;
+  /** Volume quotidien de la période précédente (même durée), pour la comparaison. */
+  previousDailyVolume: number[] | null;
 };
 
 export interface PaymentsApi {

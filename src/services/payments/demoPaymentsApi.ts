@@ -349,21 +349,27 @@ export const demoPaymentsApi: PaymentsApi = {
       const current = payments.filter((payment) => inRange(payment, firstDay, now + DAY));
       const previous = payments.filter((payment) => inRange(payment, firstDay - span, firstDay));
 
-      const dailyVolume = Array.from({ length: periodDays }, () => 0);
-      const dailyCount = Array.from({ length: periodDays }, () => 0);
-      for (const payment of current) {
-        const index = Math.floor((Date.parse(payment.createdAt) - firstDay) / DAY);
-        if (index < 0 || index >= periodDays) continue;
-        dailyCount[index]! += 1;
-        if (payment.status === 'SUCCESS' || payment.status === 'PARTIALLY_REFUNDED') {
-          dailyVolume[index]! += payment.amount;
+      const series = (list: Payment[], start: number) => {
+        const volume = Array.from({ length: periodDays }, () => 0);
+        const count = Array.from({ length: periodDays }, () => 0);
+        for (const payment of list) {
+          const index = Math.floor((Date.parse(payment.createdAt) - start) / DAY);
+          if (index < 0 || index >= periodDays) continue;
+          count[index]! += 1;
+          if (payment.status === 'SUCCESS' || payment.status === 'PARTIALLY_REFUNDED') {
+            volume[index]! += payment.amount;
+          }
         }
-      }
+        return { volume, count };
+      };
+      const { volume: dailyVolume, count: dailyCount } = series(current, firstDay);
+      const { volume: previousDailyVolume } = series(previous, firstDay - span);
       return {
         current: stats(current),
         previous: stats(previous),
         dailyVolume,
         dailyCount,
+        previousDailyVolume,
       };
     });
   },
@@ -386,7 +392,14 @@ export const demoPaymentsApi: PaymentsApi = {
               .filter(Boolean)
               .some((value) => value!.toLowerCase().includes(needle)),
         )
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        .sort((a, b) => {
+          const sort = query.sort ?? { field: 'createdAt', direction: 'desc' };
+          const diff =
+            sort.field === 'amount' ? a.amount - b.amount : a.createdAt.localeCompare(b.createdAt);
+          // À montant égal, la plus récente d'abord.
+          const ordered = sort.direction === 'asc' ? diff : -diff;
+          return ordered || b.createdAt.localeCompare(a.createdAt);
+        });
       const start = query.page * query.size;
       return {
         items: filtered.slice(start, start + query.size),
@@ -526,16 +539,29 @@ export const demoPaymentsApi: PaymentsApi = {
 
   async scheduledRefunds() {
     await wait(200);
-    return dataset((_items, state) =>
-      [...(state.scheduled ?? [])].sort((a, b) => {
-        // Prochaines échéances d'abord, puis l'historique du plus récent au plus ancien.
-        const pendingA = a.status === 'SCHEDULED' ? 0 : 1;
-        const pendingB = b.status === 'SCHEDULED' ? 0 : 1;
-        if (pendingA !== pendingB) return pendingA - pendingB;
-        return pendingA === 0
-          ? a.scheduledAt.localeCompare(b.scheduledAt)
-          : b.scheduledAt.localeCompare(a.scheduledAt);
-      }),
+    return dataset((items, state) =>
+      (state.scheduled ?? [])
+        .map((schedule): ScheduledRefund => {
+          const item = items.find((entry) => entry.payment.paymentId === schedule.paymentId);
+          if (!item) return { ...schedule };
+          const executed = schedule.refundId
+            ? refundsOf(item, state).find((refund) => refund.refundId === schedule.refundId)
+            : undefined;
+          const effectiveAmount = executed
+            ? executed.amount
+            : (schedule.amount ??
+              (schedule.status === 'SCHEDULED' ? remainingOf(item, state) : null));
+          return { ...schedule, effectiveAmount, paymentAmount: item.payment.amount };
+        })
+        .sort((a, b) => {
+          // Prochaines échéances d'abord, puis l'historique du plus récent au plus ancien.
+          const pendingA = a.status === 'SCHEDULED' ? 0 : 1;
+          const pendingB = b.status === 'SCHEDULED' ? 0 : 1;
+          if (pendingA !== pendingB) return pendingA - pendingB;
+          return pendingA === 0
+            ? a.scheduledAt.localeCompare(b.scheduledAt)
+            : b.scheduledAt.localeCompare(a.scheduledAt);
+        }),
     );
   },
 
