@@ -10,6 +10,7 @@ import { SubmitButton } from '../account/SubmitButton';
 import { Button } from '../ui/Button';
 import { DialogPanel, ModalDialog } from './FormDialog';
 import { RefundFields } from './RefundFields';
+import { useIdempotencyKey } from './useIdempotencyKey';
 import {
   emptyRefund,
   requestedAmount,
@@ -56,6 +57,7 @@ function RefundForm({
   const [errors, setErrors] = useState<RefundErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const idempotency = useIdempotencyKey();
 
   // L'erreur d'un champ disparaît dès qu'il est modifié.
   const onChange = (patch: Partial<RefundValues>) => {
@@ -78,12 +80,16 @@ function RefundForm({
     setSubmitting(true);
     setError(null);
     try {
-      const refund = await api.payments.refund(payment.paymentId, {
+      const request = {
         amount: values.mode === 'partial' ? (requested ?? undefined) : undefined,
         reason: values.reason.trim(),
+      };
+      const refund = await api.payments.refund(payment.paymentId, request, {
+        idempotencyKey: idempotency.keyFor({ paymentId: payment.paymentId, ...request }),
       });
       onRefunded(refund);
     } catch (cause) {
+      idempotency.settle(cause);
       setError(errorMessage(cause));
       setSubmitting(false);
     }

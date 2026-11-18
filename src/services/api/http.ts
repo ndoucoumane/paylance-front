@@ -12,7 +12,23 @@ export type RequestOptions = {
   /** Jeton Bearer (JWT Keycloak). */
   token?: string;
   organizationId?: string;
+  /**
+   * Clé d'idempotence (en-tête `Idempotency-Key`) des créations sensibles : paiement,
+   * remboursement, programmation. Réutilisée telle quelle si l'utilisateur relance après une
+   * erreur réseau, pour que le serveur ne crée pas l'opération deux fois.
+   */
+  idempotencyKey?: string;
 };
+
+/** `Retry-After` en secondes (forme numérique ou date HTTP). */
+function retryAfterOf(response: Response): number | null {
+  const value = response.headers.get('Retry-After');
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) return Math.max(0, Math.ceil(seconds));
+  const date = Date.parse(value);
+  return Number.isNaN(date) ? null : Math.max(0, Math.ceil((date - Date.now()) / 1_000));
+}
 
 async function readJson(response: Response): Promise<unknown> {
   const text = await response.text();
@@ -37,6 +53,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
   if (options.organizationId) headers[ORGANIZATION_HEADER] = options.organizationId;
+  if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;
 
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -58,7 +75,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   const data = await readJson(response);
   if (!response.ok) {
-    throw ApiError.fromResponse(response.status, data as ErrorResponseBody | null);
+    throw ApiError.fromResponse(
+      response.status,
+      data as ErrorResponseBody | null,
+      retryAfterOf(response),
+    );
   }
   return data as T;
 }

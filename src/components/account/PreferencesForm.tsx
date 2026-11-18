@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { account as t } from '../../content/account.fr';
-import { useSession } from '../../lib/session/sessionContext';
+import { useSession, type SessionState } from '../../lib/session/sessionContext';
 import { CURRENCIES, LANGUAGES, TIMEZONES } from '../../services/account/referenceData';
 import { preferencesSchema, type PreferencesValues } from '../../services/account/schemas';
 import type { NotificationPreferences, Preferences } from '../../services/account/types';
@@ -19,7 +19,8 @@ const NOTIFICATION_KEYS = Object.keys(
 type Props = {
   /** Préférences enregistrées, ou valeurs proposées selon le pays. */
   initial: Preferences;
-  onSaved: () => void;
+  /** Reçoit l'état renvoyé par le serveur après l'enregistrement. */
+  onSaved: (next: SessionState) => void;
 };
 
 export function PreferencesForm({ initial, onSaved }: Props) {
@@ -39,8 +40,7 @@ export function PreferencesForm({ initial, onSaved }: Props) {
     setError(null);
     try {
       await api.savePreferences(values);
-      await refresh();
-      onSaved();
+      onSaved(await refresh());
     } catch (cause) {
       setError(errorMessage(cause));
     }

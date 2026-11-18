@@ -288,8 +288,10 @@ export const dashboard = {
       title: 'Remboursement effectué avec succès',
       pendingTitle: 'Remboursement envoyé avec succès',
       text: 'Le montant a été renvoyé au client depuis votre compte marchand.',
+      failedTitle: 'Remboursement refusé',
+      failedText: 'Le prestataire a refusé le remboursement.',
       pendingText:
-        'L’opérateur traite le remboursement ; son statut se mettra à jour automatiquement.',
+        'L’opérateur n’a pas encore confirmé. Le montant reste réservé et le statut se mettra à jour automatiquement.',
       view: 'Voir la transaction',
     },
     schedule: {

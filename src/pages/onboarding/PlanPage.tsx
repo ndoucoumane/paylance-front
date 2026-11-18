@@ -6,7 +6,7 @@ import { PlanSelector } from '../../components/account/PlanSelector';
 import { useLoad } from '../../components/account/useLoad';
 import { account as t } from '../../content/account.fr';
 import { usePageTitle } from '../../lib/hooks/usePageTitle';
-import { ROUTES } from '../../lib/session/routing';
+import { resumePath } from '../../lib/session/routing';
 import { useReadySession } from '../../lib/session/sessionContext';
 
 export default function PlanPage() {
@@ -26,7 +26,7 @@ export default function PlanPage() {
           <PlanSelector
             plans={plans}
             selected={selected}
-            onSaved={() => navigate(ROUTES.providers)}
+            onSaved={(next) => navigate(resumePath(next))}
           />
         )}
       </LoadGate>

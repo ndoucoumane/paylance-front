@@ -318,6 +318,11 @@ html.theme-dark .logo-auto .logo-on-dark {
   }
 }
 
+.ui-mega {
+  animation: ui-menu-in 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+}
+
 .ui-menu {
   animation: ui-menu-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: top right;

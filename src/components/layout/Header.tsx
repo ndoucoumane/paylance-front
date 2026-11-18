@@ -18,10 +18,10 @@ export function Header() {
       <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <Container className="relative flex h-16 items-center justify-between gap-4">
           <Logo tone="light" />
-          <nav aria-label={fr.header.navLabel} className="hidden lg:block">
+          <nav aria-label={fr.header.navLabel} className="hidden xl:block">
             <MegaMenu menus={menus} />
           </nav>
-          <div className="hidden items-center gap-2 lg:flex">
+          <div className="hidden items-center gap-2 xl:flex">
             <ButtonLink to="/connexion" variant="ghostLight">
               {fr.header.login}
             </ButtonLink>

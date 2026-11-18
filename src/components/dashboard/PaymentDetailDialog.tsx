@@ -9,7 +9,6 @@ import {
 } from '../../lib/format';
 import { useSession } from '../../lib/session/sessionContext';
 import { errorMessage } from '../../services/api/errors';
-import { isRefundable } from '../../services/payments/rules';
 import type { Payment, PaymentStatusChange, Refund } from '../../services/payments/types';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
@@ -25,7 +24,8 @@ type Props = {
   /** Incrémenté après un remboursement pour recharger la chronologie. */
   version: number;
   onClose: () => void;
-  onRefund: (payment: Payment) => void;
+  /** Absent si le membre n'a pas le droit de rembourser. */
+  onRefund?: (payment: Payment) => void;
   onSchedule?: (payment: Payment) => void;
 };
 
@@ -111,7 +111,8 @@ function Detail({
     .filter((item) => item.status === 'SUCCESS')
     .reduce((sum, item) => sum + item.amount, 0);
   const paid = PAID.includes(payment.status);
-  const refundable = isRefundable(payment);
+  // Décidé par le serveur : 0 si le paiement n’est pas (ou plus) remboursable.
+  const refundable = payment.refundableAmount > 0;
   const phone = formatPhone(payment.payerPhone);
   const money = (cents: number) => formatMoney(cents, payment.currency);
 
@@ -161,15 +162,15 @@ function Detail({
               {formatShortDateTime(payment.paidAt ?? payment.createdAt)}
             </p>
           </div>
-          {(refundable || onSchedule) && (
+          {refundable && (onRefund || onSchedule) && (
             <div className="flex flex-wrap gap-2">
-              {onSchedule && refundable && (
+              {onSchedule && (
                 <Button variant="secondaryLight" onClick={() => onSchedule(payment)}>
                   <CalendarClock aria-hidden="true" className="h-4 w-4 text-sky-700" />
                   {d.schedule}
                 </Button>
               )}
-              {refundable && (
+              {onRefund && (
                 <Button onClick={() => onRefund(payment)}>
                   <RotateCcw aria-hidden="true" className="h-4 w-4" />
                   {d.refund}

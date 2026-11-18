@@ -24,6 +24,10 @@ export class ApiError extends Error {
   readonly status: number | null;
   readonly details: string[];
   readonly correlationId: string | null;
+  /** `message` du corps `ErrorResponse`, rédigé par le serveur pour l'utilisateur. */
+  readonly serverMessage: string | null;
+  /** En-tête `Retry-After` (secondes), sur un `429`. */
+  readonly retryAfter: number | null;
 
   constructor(
     kind: ApiErrorKind,
@@ -32,6 +36,8 @@ export class ApiError extends Error {
       status?: number | null;
       details?: string[] | null;
       correlationId?: string | null;
+      serverMessage?: string | null;
+      retryAfter?: number | null;
       cause?: unknown;
     } = {},
   ) {
@@ -41,13 +47,28 @@ export class ApiError extends Error {
     this.status = options.status ?? null;
     this.details = options.details ?? [];
     this.correlationId = options.correlationId ?? null;
+    // Une erreur HTTP construite à la main (démo, garde locale) porte un message affichable.
+    this.serverMessage =
+      'serverMessage' in options
+        ? (options.serverMessage ?? null)
+        : kind === 'http'
+          ? message
+          : null;
+    this.retryAfter = options.retryAfter ?? null;
   }
 
-  static fromResponse(status: number, body: ErrorResponseBody | null): ApiError {
-    return new ApiError('http', body?.message || `Réponse HTTP ${status}`, {
+  static fromResponse(
+    status: number,
+    body: ErrorResponseBody | null,
+    retryAfter: number | null = null,
+  ): ApiError {
+    const serverMessage = body?.message?.trim() || null;
+    return new ApiError('http', serverMessage ?? `Réponse HTTP ${status}`, {
       status,
       details: body?.details,
       correlationId: body?.correlationId,
+      serverMessage,
+      retryAfter,
     });
   }
 
@@ -60,7 +81,11 @@ export class ApiError extends Error {
   }
 }
 
-/** Message affichable pour n'importe quelle erreur levée par un appel API. */
+/**
+ * Message affichable pour n'importe quelle erreur levée par un appel API.
+ * Le serveur fait foi : son `message` est affiché tel quel, quel que soit le statut.
+ * Les textes ci-dessous ne servent que lorsqu'il n'en fournit pas.
+ */
 export function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     switch (error.kind) {
@@ -71,9 +96,15 @@ export function errorMessage(error: unknown): string {
       case 'not-available':
         return error.message;
       case 'http':
+        if (error.serverMessage) return error.serverMessage;
         if (error.status === 401) return 'Votre session a expiré. Reconnectez-vous.';
         if (error.status === 403)
           return 'Vous n’avez pas les droits nécessaires pour cette action.';
+        if (error.status === 429) {
+          return error.retryAfter
+            ? `Trop de tentatives. Réessayez dans ${error.retryAfter} s.`
+            : 'Trop de tentatives. Réessayez dans un instant.';
+        }
         if (error.status !== null && error.status >= 500) {
           return 'Une erreur est survenue sur le serveur. Réessayez dans un instant.';
         }

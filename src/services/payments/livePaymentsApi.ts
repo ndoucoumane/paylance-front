@@ -26,9 +26,9 @@ type SpringPage<T> = {
   page?: { totalElements: number; number: number; size: number };
 };
 
-/** LocalDateTime attendu par @DateTimeFormat(ISO.DATE_TIME), sans fuseau. */
-function isoLocal(time: number): string {
-  return new Date(time).toISOString().slice(0, 19);
+/** Instant UTC avec `Z` (ex. `2026-11-18T08:00:00.000Z`), accepté par `from` et `to`. */
+function isoUtc(time: number): string {
+  return new Date(time).toISOString();
 }
 
 async function auth() {
@@ -36,7 +36,7 @@ async function auth() {
 }
 
 async function fetchStats(from: number, to: number): Promise<PaymentStats> {
-  const params = new URLSearchParams({ from: isoLocal(from), to: isoLocal(to) });
+  const params = new URLSearchParams({ from: isoUtc(from), to: isoUtc(to) });
   return apiRequest<PaymentStats>(`/api/v1/dashboard/payments/stats?${params}`, await auth());
 }
 
@@ -61,7 +61,7 @@ export const livePaymentsApi: PaymentsApi = {
       size: String(query.size),
       // Pageable Spring : « champ,sens ».
       sort: `${query.sort?.field ?? 'createdAt'},${query.sort?.direction ?? 'desc'}`,
-      from: isoLocal(periodStart(query.periodDays)),
+      from: isoUtc(periodStart(query.periodDays)),
     });
     if (query.status) params.set('status', query.status);
     if (query.provider) params.set('provider', query.provider);
@@ -90,10 +90,11 @@ export const livePaymentsApi: PaymentsApi = {
     return apiRequest<Refund[]>(`${path(paymentId)}/refunds`, await auth());
   },
 
-  async refund(paymentId, request) {
+  async refund(paymentId, request, options) {
     return apiRequest<Refund>(`${path(paymentId)}/refunds`, {
       method: 'POST',
       body: request,
+      idempotencyKey: options?.idempotencyKey,
       ...(await auth()),
     });
   },

@@ -14,6 +14,7 @@ type Props = {
   idPrefix: string;
   payment: Payment;
   remaining: number | null;
+  /** Solde estimé localement (le serveur ne l'a pas fourni) : affiché comme tel. */
   values: RefundValues;
   errors: RefundErrors;
   onChange: (patch: Partial<RefundValues>) => void;

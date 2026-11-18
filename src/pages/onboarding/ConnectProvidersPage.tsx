@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { account as t } from '../../content/account.fr';
 import { usePageTitle } from '../../lib/hooks/usePageTitle';
-import { ROUTES } from '../../lib/session/routing';
+import { resumePath, ROUTES } from '../../lib/session/routing';
 import { useReadySession } from '../../lib/session/sessionContext';
 import { errorMessage } from '../../services/api/errors';
 
@@ -24,9 +24,10 @@ export default function ConnectProvidersPage() {
     try {
       if (snapshot.progress.currentStep !== 'DONE') {
         await api.completeProvidersStep();
-        await refresh();
+        navigate(resumePath(await refresh()));
+      } else {
+        navigate(ROUTES.dashboard);
       }
-      navigate(ROUTES.dashboard);
     } catch (cause) {
       setError(errorMessage(cause));
       setFinishing(false);

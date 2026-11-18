@@ -9,7 +9,6 @@ import type { PaymentOverview, PeriodDays } from '../../services/payments/types'
 import { Alert } from '../ui/Alert';
 import { Breakdown } from './Breakdown';
 import { KpiCards } from './KpiCards';
-import { PeriodSelector } from './PeriodSelector';
 import { VolumeChart } from './VolumeChart';
 
 function OverviewSkeleton() {
@@ -28,10 +27,18 @@ function OverviewSkeleton() {
   );
 }
 
-/** Vue d'ensemble : indicateurs, courbe et répartition. La liste vit sur la page Transactions. */
-export function TransactionsOverview({ currency }: { currency: string }) {
+/**
+ * Vue d'ensemble : accès aux transactions, indicateurs, courbe et répartition.
+ * La période est choisie dans l'en-tête de la page (`PeriodSelector`).
+ */
+export function TransactionsOverview({
+  currency,
+  period,
+}: {
+  currency: string;
+  period: PeriodDays;
+}) {
   const { api } = useSession();
-  const [period, setPeriod] = useState<PeriodDays>(30);
   const [overview, setOverview] = useState<PaymentOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +56,25 @@ export function TransactionsOverview({ currency }: { currency: string }) {
 
   return (
     <div className="space-y-6">
-      <PeriodSelector value={period} onChange={setPeriod} />
+      <Link
+        to={ROUTES.dashboardTransactions}
+        className="group flex items-center gap-4 rounded-2xl bg-white p-5 ring-1 ring-neutral-200 transition-shadow hover:ring-neutral-300 sm:p-6"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-950 text-white">
+          <ListOrdered aria-hidden="true" className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold text-neutral-950">{t.overviewLink.title}</span>
+          <span className="mt-0.5 block text-sm text-neutral-500">{t.overviewLink.text}</span>
+        </span>
+        <span className="hidden items-center gap-1.5 text-sm font-semibold text-primary-strong sm:inline-flex">
+          {t.overviewLink.cta}
+          <ArrowRight
+            aria-hidden="true"
+            className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+          />
+        </span>
+      </Link>
 
       {error && (
         <Alert tone="error" title={t.table.emptyTitle}>
@@ -82,26 +107,6 @@ export function TransactionsOverview({ currency }: { currency: string }) {
           </div>
         </>
       )}
-
-      <Link
-        to={ROUTES.dashboardTransactions}
-        className="group flex items-center gap-4 rounded-2xl bg-white p-5 ring-1 ring-neutral-200 transition-shadow hover:ring-neutral-300 sm:p-6"
-      >
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-950 text-white">
-          <ListOrdered aria-hidden="true" className="h-5 w-5" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-neutral-950">{t.overviewLink.title}</span>
-          <span className="mt-0.5 block text-sm text-neutral-500">{t.overviewLink.text}</span>
-        </span>
-        <span className="hidden items-center gap-1.5 text-sm font-semibold text-primary-strong sm:inline-flex">
-          {t.overviewLink.cta}
-          <ArrowRight
-            aria-hidden="true"
-            className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-          />
-        </span>
-      </Link>
     </div>
   );
 }

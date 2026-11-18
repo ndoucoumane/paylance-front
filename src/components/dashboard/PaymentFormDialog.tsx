@@ -14,6 +14,7 @@ import { toneStyles } from './dialogTones';
 import { Chip, DialogPanel, ModalDialog } from './FormDialog';
 import { ProviderMark } from './ProviderMark';
 import { providerNames } from './providers';
+import { useIdempotencyKey } from './useIdempotencyKey';
 
 type Props = {
   open: boolean;
@@ -77,6 +78,7 @@ function PaymentForm({
   const [errors, setErrors] = useState<Errors>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const idempotency = useIdempotencyKey();
   const tone = toneStyles.emerald;
 
   const value = Number(amount) || 0;
@@ -108,16 +110,20 @@ function PaymentForm({
     setSubmitting(true);
     setError(null);
     try {
-      const payment = await api.payments.create({
+      const request = {
         providerAccountId: account!.id,
         amount: value * 100,
         payerPhone: `${dialCode}${phone}`,
         externalReference: reference.trim() || undefined,
         description: description.trim() || undefined,
         expiresInMinutes: expiry,
+      };
+      const payment = await api.payments.create(request, {
+        idempotencyKey: idempotency.keyFor(request),
       });
       onCreated(payment);
     } catch (cause) {
+      idempotency.settle(cause);
       setError(errorMessage(cause));
     } finally {
       setSubmitting(false);

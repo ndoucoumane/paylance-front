@@ -6,16 +6,16 @@ import { SessionContext, type SessionContextValue, type SessionState } from './s
 export function SessionProvider({ api, children }: { api: AccountApi; children: ReactNode }) {
   const [state, setState] = useState<SessionState>({ status: 'loading' });
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<SessionState> => {
+    let next: SessionState;
     try {
       const snapshot = await api.getSnapshot();
-      setState(snapshot ? { status: 'ready', ...snapshot } : { status: 'anonymous' });
+      next = snapshot ? { status: 'ready', ...snapshot } : { status: 'anonymous' };
     } catch (error) {
-      setState({
-        status: 'error',
-        error: error instanceof Error ? error : new Error(String(error)),
-      });
+      next = { status: 'error', error: error instanceof Error ? error : new Error(String(error)) };
     }
+    setState(next);
+    return next;
   }, [api]);
 
   useEffect(() => {

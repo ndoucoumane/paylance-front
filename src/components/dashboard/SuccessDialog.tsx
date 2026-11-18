@@ -62,6 +62,7 @@ function Content({
   let provider: Payment['provider'];
   let rows: Row[];
   let secondary: ReactNode = null;
+  let failed = false;
 
   if (info.kind === 'payment') {
     const { payment } = info;
@@ -92,9 +93,18 @@ function Content({
     );
   } else if (info.kind === 'refund') {
     const { refund, payment } = info;
-    const done = refund.status === 'SUCCESS';
-    title = done ? c.refund.title : c.refund.pendingTitle;
-    text = done ? c.refund.text : c.refund.pendingText;
+    // Le statut renvoyé par le serveur fait foi : un 201 peut être en cours ou refusé.
+    if (refund.status === 'FAILED') {
+      failed = true;
+      title = c.refund.failedTitle;
+      text = refund.failureReason ?? c.refund.failedText;
+    } else if (refund.status === 'PENDING') {
+      title = c.refund.pendingTitle;
+      text = c.refund.pendingText;
+    } else {
+      title = c.refund.title;
+      text = c.refund.text;
+    }
     amount = formatMoney(refund.amount, payment.currency);
     number = refund.paymentNumber;
     provider = payment.provider;
@@ -149,7 +159,7 @@ function Content({
         </button>
 
         <div className="flex flex-col items-center text-center">
-          <SuccessCheck />
+          {failed ? <FailureMark /> : <SuccessCheck />}
           <h2 id={titleId} role="status" className="mt-6 text-xl font-semibold tracking-tight">
             {title}
           </h2>
@@ -215,6 +225,29 @@ function SuccessCheck() {
         strokeLinecap="round"
         strokeLinejoin="round"
         className="ui-success-path text-emerald-600"
+      />
+    </svg>
+  );
+}
+
+/** Échec renvoyé par le serveur (ex. remboursement refusé par l'opérateur) : croix rouge. */
+function FailureMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 52 52" className="ui-success-check h-16 w-16" fill="none">
+      <circle
+        cx="26"
+        cy="26"
+        r="24"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        className="ui-success-ring text-red-600"
+      />
+      <path
+        d="M19 19l14 14M33 19L19 33"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        className="ui-success-path text-red-600"
       />
     </svg>
   );

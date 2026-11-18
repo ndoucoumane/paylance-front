@@ -19,6 +19,10 @@ export function requestedAmount(values: RefundValues, remaining: number | null):
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+/**
+ * Contrôles de confort de saisie uniquement : le serveur refait tous les contrôles et son
+ * message fait foi. Le plafond est le `refundableAmount` renvoyé par le serveur.
+ */
 export function validateRefund(
   values: RefundValues,
   remaining: number,
@@ -33,7 +37,11 @@ export function validateRefund(
   return errors;
 }
 
-/** Solde remboursable d'un paiement : montant moins les remboursements aboutis. */
+/**
+ * Solde remboursable d'un paiement, relu sur le serveur à l'ouverture du formulaire :
+ * `refundableAmount`, calculé par le serveur (remboursements aboutis et en cours déduits).
+ * Aucun calcul local : si la lecture échoue, le solde reste inconnu et l'envoi est bloqué.
+ */
 export function useRemaining(payment: Payment | null) {
   const { api } = useSession();
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -43,18 +51,12 @@ export function useRemaining(payment: Payment | null) {
     setError(null);
     if (!payment) return;
     let cancelled = false;
-    api.payments.refunds(payment.paymentId).then(
-      (refunds) => {
-        if (cancelled) return;
-        const done = refunds
-          .filter((item) => item.status === 'SUCCESS')
-          .reduce((sum, item) => sum + item.amount, 0);
-        setRemaining(payment.amount - done);
+    api.payments.get(payment.paymentId).then(
+      (fresh) => {
+        if (!cancelled) setRemaining(fresh.refundableAmount);
       },
       (cause: unknown) => {
-        if (cancelled) return;
-        setError(errorMessage(cause));
-        setRemaining(payment.amount);
+        if (!cancelled) setError(errorMessage(cause));
       },
     );
     return () => {

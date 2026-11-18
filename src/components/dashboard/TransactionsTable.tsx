@@ -24,7 +24,6 @@ import {
 import { useSession } from '../../lib/session/sessionContext';
 import type { PaymentProvider } from '../../services/account/types';
 import { errorMessage } from '../../services/api/errors';
-import { isRefundable } from '../../services/payments/rules';
 import type {
   Payment,
   PaymentPage,
@@ -57,7 +56,8 @@ type Props = {
   /** Incrémenté après un remboursement pour recharger la liste. */
   version: number;
   onOpen: (payment: Payment) => void;
-  onRefund: (payment: Payment) => void;
+  /** Absent si le membre n'a pas le droit de rembourser (rôle DEVELOPER ou VIEWER). */
+  onRefund?: (payment: Payment) => void;
   onSchedule?: (payment: Payment) => void;
   /** Affiche le choix de la période à côté du bouton Exporter. */
   onPeriodChange?: (period: PeriodDays) => void;
@@ -238,15 +238,19 @@ export function TransactionsTable({
       onSelect: () => copy(payment.payerPhone ?? ''),
       disabled: !payment.payerPhone,
     },
-    {
-      id: 'refund',
-      label: t.actions.refund,
-      icon: RotateCcw,
-      onSelect: () => onRefund(payment),
-      disabled: !isRefundable(payment),
-      hint: t.actions.refundUnavailable,
-      separated: true,
-    },
+    ...(onRefund
+      ? [
+          {
+            id: 'refund',
+            label: t.actions.refund,
+            icon: RotateCcw,
+            onSelect: () => onRefund(payment),
+            disabled: payment.refundableAmount <= 0,
+            hint: t.actions.refundUnavailable,
+            separated: true,
+          },
+        ]
+      : []),
     ...(onSchedule
       ? [
           {
@@ -254,7 +258,7 @@ export function TransactionsTable({
             label: t.actions.schedule,
             icon: CalendarClock,
             onSelect: () => onSchedule(payment),
-            disabled: !isRefundable(payment),
+            disabled: payment.refundableAmount <= 0,
             hint: t.actions.refundUnavailable,
           },
         ]

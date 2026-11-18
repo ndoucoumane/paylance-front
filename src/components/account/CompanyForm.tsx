@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { account as t } from '../../content/account.fr';
-import { useSession } from '../../lib/session/sessionContext';
+import { useSession, type SessionState } from '../../lib/session/sessionContext';
 import {
   COMPANY_SIZES,
   COUNTRIES,
@@ -24,7 +24,8 @@ import { SubmitButton } from './SubmitButton';
 type Props = {
   initial: CompanyProfile | null;
   /** Appelé après l'enregistrement (création ou mise à jour). */
-  onSaved: () => void;
+  /** Reçoit l'état renvoyé par le serveur après l'enregistrement. */
+  onSaved: (next: SessionState) => void;
 };
 
 const DEFAULT_COUNTRY = 'SN';
@@ -78,8 +79,7 @@ export function CompanyForm({ initial, onSaved }: Props) {
         website: normalizeWebsite(values.website),
         size: values.size as CompanyProfile['size'],
       });
-      await refresh();
-      onSaved();
+      onSaved(await refresh());
     } catch (cause) {
       setError(errorMessage(cause));
     }

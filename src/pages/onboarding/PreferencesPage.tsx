@@ -6,7 +6,7 @@ import { PreferencesForm } from '../../components/account/PreferencesForm';
 import { useLoad } from '../../components/account/useLoad';
 import { account as t } from '../../content/account.fr';
 import { usePageTitle } from '../../lib/hooks/usePageTitle';
-import { ROUTES } from '../../lib/session/routing';
+import { resumePath } from '../../lib/session/routing';
 import { useReadySession } from '../../lib/session/sessionContext';
 import { defaultPreferences } from '../../services/account/referenceData';
 
@@ -29,7 +29,7 @@ export default function PreferencesPage() {
     >
       <LoadGate state={state} retry={retry}>
         {(preferences) => (
-          <PreferencesForm initial={preferences} onSaved={() => navigate(ROUTES.plan)} />
+          <PreferencesForm initial={preferences} onSaved={(next) => navigate(resumePath(next))} />
         )}
       </LoadGate>
     </OnboardingLayout>
